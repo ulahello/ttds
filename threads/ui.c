@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/poll.h>
 #include <unistd.h>
 
@@ -20,13 +21,13 @@
 struct pane {
 	char *name;
 	struct canvas *canvas;
-	pthread_mutex_t lock;
 };
 
 static void *rotate_panes(void *);
 
 struct pane_storage {
-	_Atomic size_t count;
+	size_t count;
+	pthread_mutex_t lock;
 	struct pane panes[MAX_PANES];
 };
 
@@ -45,7 +46,7 @@ char *ui_failure_strs[] = {
 
 char *ui_failure_str(enum ui_failure f)
 {
-        return ui_failure_strs[f];
+	return ui_failure_strs[f];
 }
 
 struct ui_ctx *ui_ctx_new(void)
@@ -57,15 +58,17 @@ struct ui_ctx *ui_ctx_new(void)
 	ctx->r_ctx = rendering_init();
 	rendering_ctx_log(ctx->r_ctx);
 
+	pthread_mutex_init(&ctx->panes.lock, NULL);
+
+	if (pthread_mutex_lock(&ctx->panes.lock) != 0)
+		FATAL_ERR("couldn't lock newly created pane mutex");
+
+	ctx->panes.count = 1;
 	ctx->panes.panes[0].canvas = canvas_init(ctx->r_ctx);
 	ctx->panes.panes[0].name = strdup("root");
 
 	if (!ctx->panes.panes[0].name)
 		FATAL_ERR("ui: ctx_new: pane creation OOM");
-
-	pthread_mutex_init(&ctx->panes.panes[0].lock, NULL);
-
-	atomic_init(&ctx->panes.count, 1);
 
 	struct color bg = {
 		.r = 0x22,
@@ -74,6 +77,8 @@ struct ui_ctx *ui_ctx_new(void)
 	};
 
 	rendering_fill(ctx->panes.panes[0].canvas, bg);
+
+	pthread_mutex_unlock(&ctx->panes.lock);
 
 	// Make sure that the cancellation fd is invalid until ui_thread gets
 	// around to making the pipe.
@@ -101,8 +106,9 @@ void *ui_thread(void *arg)
 
 	fprintf(stderr, "rendering: terminating\n");
 
-	size_t len =
-	    atomic_load_explicit(&ctx->panes.count, memory_order_acquire);
+	// We don't need to take the lock as the only thread that could be using
+	// it --- pane_handle --- has been pthread_join(3)ed.
+	size_t len = ctx->panes.count;
 	for (size_t i = 0; i < len; i++) {
 		canvas_deinit(ctx->panes.panes[i].canvas);
 		free(ctx->panes.panes[i].name);
@@ -125,20 +131,20 @@ static void *rotate_panes(void *arg)
 
 	for (size_t i = 0;; i++) {
 
-		size_t len = atomic_load(&ctx->panes.count);
-		size_t idx = i % len;
-		struct pane *p = &ctx->panes.panes[idx];
+		r = pthread_mutex_lock(&ctx->panes.lock);
 
-		r = pthread_mutex_lock(&p->lock);
 		if (r != 0)
-			FATAL_ERR("ui: couldn't take lock: %s", STR_ERR);
+			FATAL_ERR("ui: couldn't take lock: %s", strerror(r));
+
+		size_t idx = i % ctx->panes.count;
+		struct pane *p = &ctx->panes.panes[idx];
 
 		fprintf(stderr, "ui: flipping pane: %s\n", p->name);
 		rendering_show(ctx->r_ctx, p->canvas);
 
-		r = pthread_mutex_unlock(&p->lock);
+		r = pthread_mutex_unlock(&ctx->panes.lock);
 		if (r != 0)
-			FATAL_ERR("ui: couldn't return lock: %s", STR_ERR);
+			FATAL_ERR("ui: couldn't return lock: %s", strerror(r));
 
 		// Do a cancellable 1-second sleep.
 		poll(fds, 1, 1000);
@@ -155,19 +161,15 @@ enum ui_failure ui_pane_create(
 {
 	// Really huge assumption that only one thread is calling into this or
 	// the deletion function at once.
+	pthread_mutex_lock(&ctx->panes.lock);
 
-	size_t idx =
-	    atomic_load_explicit(&ctx->panes.count, memory_order_acquire);
-
+	size_t idx = ctx->panes.count;
 	for (size_t i = 0; i < idx; i++) {
 		struct pane *p = &ctx->panes.panes[i];
-		pthread_mutex_lock(&p->lock);
 		if (strcmp(p->name, name) == 0) {
-			pthread_mutex_unlock(&p->lock);
+			pthread_mutex_unlock(&ctx->panes.lock);
 			return UI_DUPLICATE;
 		}
-
-		pthread_mutex_unlock(&p->lock);
 	}
 
 	assert(idx < MAX_PANES);
@@ -183,10 +185,10 @@ enum ui_failure ui_pane_create(
 		return UI_OOM;
 	}
 
-	pthread_mutex_init(&ctx->panes.panes[idx].lock, NULL);
 	rendering_fill(p->canvas, fill);
 
-	atomic_store_explicit(&ctx->panes.count, idx + 1, memory_order_release);
+	ctx->panes.count++;
+	pthread_mutex_unlock(&ctx->panes.lock);
 
 	return UI_OK;
 }
