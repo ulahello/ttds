@@ -1,2 +1,2 @@
 [*.{c,h}]
-tab_size = 8
+tab_width = 8
