@@ -42,6 +42,7 @@ char *ui_failure_strs[] = {
 	[UI_OK] = "no failure",
 	[UI_DUPLICATE] = "duplicate pane",
 	[UI_OOM] = "oom",
+	[UI_NO_SUCH_PANE] = "targeted pane doesn't exist",
 };
 
 char *ui_failure_str(enum ui_failure f)
@@ -191,4 +192,37 @@ enum ui_failure ui_pane_create(
 	pthread_mutex_unlock(&ctx->panes.lock);
 
 	return UI_OK;
+}
+
+enum ui_failure ui_pane_remove(struct ui_ctx *ctx, char *name)
+{
+        int r;
+
+        r = pthread_mutex_lock(&ctx->panes.lock);
+        if (r != 0)
+                FATAL_ERR("ui_pane_remove: failed to take lock: %s", strerror(r));
+
+        for (size_t i = 0; i < ctx->panes.count; i++) {
+                if (strcmp(ctx->panes.panes[i].name, name) != 0) continue;
+
+                struct pane *p = &ctx->panes.panes[i];
+                free(p->name);
+                canvas_deinit(p->canvas);
+
+                for (size_t j = i + 1; j < ctx->panes.count; j++) {
+                        struct pane *q = &ctx->panes.panes[j];
+                        p->name = q->name;
+                        p->canvas = q->canvas;
+
+                        p = q;
+                }
+
+                ctx->panes.count--;
+
+                pthread_mutex_unlock(&ctx->panes.lock);
+                return UI_OK;
+        }
+
+        pthread_mutex_unlock(&ctx->panes.lock);
+        return UI_NO_SUCH_PANE;
 }

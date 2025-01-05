@@ -43,15 +43,14 @@ static char *eat_whitespace(char *);
 static char **collect_args(char *, size_t *, char **);
 
 static void act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
+static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
 
 static struct {
 	char *name;
 	act_t hook;
-} actions[] = {
-	{ "CREATE", act_create },
-};
+} actions[] = { { "CREATE", act_create }, { "REMOVE", act_remove } };
 
 void *cmd_thread(void *arg)
 {
@@ -239,7 +238,6 @@ static char **collect_args(char *input, size_t *argc, char **argv)
 static void act_create(
     struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	printf("CREATE: %s\n", target);
 	if (argc != 1) {
 		printf("failure: CREATE requires exactly one argument\n");
 		return;
@@ -252,10 +250,21 @@ static void act_create(
 	}
 
 	enum ui_failure r = ui_pane_create(ctx, target, fill);
-	if (r != UI_OK) {
+	if (r != UI_OK)
 		fprintf(stderr, "act_create: failed: %s\n", ui_failure_str(r));
-		printf("failed: %s\n", ui_failure_str(r));
+}
+
+static void act_remove(
+    struct ui_ctx *ctx, char *target, size_t argc, char **)
+{
+	if (argc != 0) {
+		printf("failure: REMOVE requires no arguments.");
+		return;
 	}
+
+	enum ui_failure r = ui_pane_remove(ctx, target);
+	if (r != UI_OK)
+		fprintf(stderr, "act_remove: failed: %s", ui_failure_str(r));
 }
 
 static bool parse_color(const char *in, struct color *out)
