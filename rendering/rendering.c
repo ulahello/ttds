@@ -38,6 +38,8 @@ static void require_dumb_buffers(card_fd_t);
 static void require_universal_planes(card_fd_t);
 static bool is_primary_plane(struct rendering_ctx *, plane_id_t plane_id);
 
+static void draw_point(struct canvas *, uint16_t x, uint16_t y, struct color);
+
 struct buffer {
 	buf_id_t id;
 	uint32_t stride;
@@ -131,37 +133,24 @@ void canvas_deinit(struct canvas *c)
 void rendering_fill(struct canvas *c, struct color color)
 {
 	// Color space is little endian, thus the BGRA format used below:
-	uint8_t mapped[4] = { color.b, color.g, color.r, 0xFF };
-
-	for (uint16_t x = 0; x < c->width; x++) {
-		for (uint16_t y = 0; y < c->height; y++) {
-			size_t off = (c->stride * y) + (x * sizeof(mapped));
-			memcpy(&c->buffer[off], mapped, sizeof(mapped));
-		}
-	}
+	for (uint16_t x = 0; x < c->width; x++)
+		for (uint16_t y = 0; y < c->height; y++)
+			draw_point(c, x, y, color);
 }
 
 void rendering_draw_rect(
     struct canvas *c, const struct rect *rect, struct color color)
 {
-	uint8_t mapped[4] = { color.b, color.g, color.r, 0xFF };
-
 	uint16_t right_edge = rect->x + rect->w;
 	uint16_t bottom_edge = rect->y + rect->h;
-	for (uint16_t y = rect->y; y < bottom_edge && y < bottom_edge; y++) {
-		for (uint16_t x = rect->x; x < right_edge && x < c->width;
-		    x++) {
-			size_t off = (c->stride * y) + (x * sizeof(mapped));
-			memcpy(&c->buffer[off], mapped, sizeof(mapped));
-		}
-	}
+	for (uint16_t y = rect->y; y < bottom_edge && y < bottom_edge; y++)
+		for (uint16_t x = rect->x; x < right_edge && x < c->width; x++)
+			draw_point(c, x, y, color);
 }
 
 void rendering_draw_circle(
     struct canvas *c, const struct circle *circle, struct color color)
 {
-	uint8_t mapped[4] = { color.b, color.g, color.r, 0xFF };
-
 	uint16_t x = circle->r;
 	uint16_t y = 0;
 	int32_t t1 = circle->r / 16;
@@ -170,51 +159,35 @@ void rendering_draw_circle(
 	while (x >= y) {
 		uint16_t eff_y = circle->y + y;
 		uint16_t eff_x = circle->x + x;
-
-		size_t off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - y;
 		eff_x = circle->x + x;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - y;
 		eff_x = circle->x - x;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + y;
 		eff_x = circle->x - x;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + x;
 		eff_x = circle->x + y;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - x;
 		eff_x = circle->x + y;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - x;
 		eff_x = circle->x - y;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + x;
 		eff_x = circle->x - y;
-
-		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
-		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		draw_point(c, eff_x, eff_y, color);
 
 		y++;
 		t1 = t1 + y;
@@ -451,4 +424,14 @@ static bool is_primary_plane(struct rendering_ctx *ctx, plane_id_t plane_id)
 	}
 
 	FATAL_ERR("No primary plane could be found.");
+}
+
+static void draw_point(
+    struct canvas *c, uint16_t x, uint16_t y, struct color color)
+{
+	// Color space is little endian, thus the BGRA format used below:
+	uint8_t mapped[4] = { color.b, color.g, color.r, 0xFF };
+
+	size_t off = (c->stride * y) + (x * sizeof(mapped));
+	memcpy(&c->buffer[off], mapped, sizeof(mapped));
 }
