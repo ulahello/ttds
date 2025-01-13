@@ -254,11 +254,10 @@ static void act_create(
 		fprintf(stderr, "act_create: failed: %s\n", ui_failure_str(r));
 }
 
-static void act_remove(
-    struct ui_ctx *ctx, char *target, size_t argc, char **)
+static void act_remove(struct ui_ctx *ctx, char *target, size_t argc, char **)
 {
 	if (argc != 0) {
-		printf("failure: REMOVE requires no arguments.");
+		printf("failure: REMOVE requires no arguments.\n");
 		return;
 	}
 
