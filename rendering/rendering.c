@@ -157,6 +157,75 @@ void rendering_draw_rect(
 	}
 }
 
+void rendering_draw_circle(
+    struct canvas *c, const struct circle *circle, struct color color)
+{
+	uint8_t mapped[4] = { color.b, color.g, color.r, 0xFF };
+
+	uint16_t x = circle->r;
+	uint16_t y = 0;
+	int32_t t1 = circle->r / 16;
+
+	// i copied this off wikipedia lol
+	while (x >= y) {
+		uint16_t eff_y = circle->y + y;
+		uint16_t eff_x = circle->x + x;
+
+		size_t off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y - y;
+		eff_x = circle->x + x;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y - y;
+		eff_x = circle->x - x;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y + y;
+		eff_x = circle->x - x;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y + x;
+		eff_x = circle->x + y;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y - x;
+		eff_x = circle->x + y;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y - x;
+		eff_x = circle->x - y;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		eff_y = circle->y + x;
+		eff_x = circle->x - y;
+
+		off = (c->stride * eff_y) + (eff_x * sizeof(mapped));
+		memcpy(&c->buffer[off], mapped, sizeof(mapped));
+
+		y++;
+		t1 = t1 + y;
+		int32_t t2 = t1 - x;
+		if (t2 >= 0) {
+			t1 = t2;
+			x--;
+		}
+	}
+}
+
 void rendering_show(struct rendering_ctx *ctx, struct canvas *c)
 {
 	struct buffer back = ctx->bufs[1 ^ ctx->front_buf_idx];

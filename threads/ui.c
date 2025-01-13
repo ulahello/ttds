@@ -254,3 +254,29 @@ enum ui_failure ui_pane_draw_rect(
 	pthread_mutex_unlock(&ctx->panes.lock);
 	return UI_OK;
 }
+
+enum ui_failure ui_pane_draw_circle(
+    struct ui_ctx *ctx, char *name, const struct circle *circle, struct color c)
+{
+	int r;
+
+	r = pthread_mutex_lock(&ctx->panes.lock);
+	if (r != 0)
+		FATAL_ERR(
+		    "ui_pane_draw_rect: failed to lock: %s\n", strerror(r));
+
+	struct pane *p = NULL;
+	for (size_t i = 0; i < ctx->panes.count; i++) {
+		p = &ctx->panes.panes[i];
+		if (strcmp(p->name, name) == 0)
+			break;
+	}
+
+	if (!p)
+		return UI_NO_SUCH_PANE;
+
+	rendering_draw_circle(p->canvas, circle, c);
+
+	pthread_mutex_unlock(&ctx->panes.lock);
+	return UI_OK;
+}

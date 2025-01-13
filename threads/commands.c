@@ -45,6 +45,7 @@ static char **collect_args(char *, size_t *, char **);
 static void act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
+static void act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
 
@@ -55,6 +56,7 @@ static struct {
 	{ "CREATE", act_create },
 	{ "REMOVE", act_remove },
 	{ "RECT", act_rect },
+	{ "CIRCLE", act_circle },
 };
 
 void *cmd_thread(void *arg)
@@ -320,6 +322,55 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 
 	enum ui_failure r = ui_pane_draw_rect(ctx, target, &rect, color);
 	if (r != UI_OK) {
+		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
+		return;
+	}
+}
+
+static void act_circle(
+    struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+{
+	if (argc != 4) {
+		printf("failure: RECT requires args color x y r.\n");
+		return;
+	}
+
+	struct color color;
+	if (!parse_color(argv[0], &color)) {
+		printf("failure: first argument is not a color.\n");
+		return;
+	}
+
+	size_t x, y, r;
+
+	char *end = NULL;
+	x = strtol(argv[1], &end, 0);
+	if (*end != '\0') {
+		printf("failure: second argument (x) is not a number.\n");
+		return;
+	}
+
+	y = strtol(argv[2], &end, 0);
+	if (*end != '\0') {
+		printf("failure: third argument (y) is not a number.\n");
+		return;
+	}
+
+	r = strtol(argv[3], &end, 0);
+	if (*end != '\0') {
+		printf("failure: fourth argument (r) is not a number.\n");
+		return;
+	}
+
+	struct circle circle = {
+		.x = x,
+		.y = y,
+		.r = r,
+	};
+
+	enum ui_failure result =
+	    ui_pane_draw_circle(ctx, target, &circle, color);
+	if (result != UI_OK) {
 		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
 		return;
 	}

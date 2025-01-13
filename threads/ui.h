@@ -28,3 +28,6 @@ enum ui_failure ui_pane_remove(struct ui_ctx *ctx, char *name);
 
 enum ui_failure ui_pane_draw_rect(
     struct ui_ctx *ctx, char *name, const struct rect *, struct color);
+
+enum ui_failure ui_pane_draw_circle(
+    struct ui_ctx *ctx, char *name, const struct circle *, struct color);
