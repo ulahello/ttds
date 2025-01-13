@@ -196,33 +196,61 @@ enum ui_failure ui_pane_create(
 
 enum ui_failure ui_pane_remove(struct ui_ctx *ctx, char *name)
 {
-        int r;
+	int r;
 
-        r = pthread_mutex_lock(&ctx->panes.lock);
-        if (r != 0)
-                FATAL_ERR("ui_pane_remove: failed to take lock: %s", strerror(r));
+	r = pthread_mutex_lock(&ctx->panes.lock);
+	if (r != 0)
+		FATAL_ERR(
+		    "ui_pane_remove: failed to take lock: %s", strerror(r));
 
-        for (size_t i = 0; i < ctx->panes.count; i++) {
-                if (strcmp(ctx->panes.panes[i].name, name) != 0) continue;
+	for (size_t i = 0; i < ctx->panes.count; i++) {
+		if (strcmp(ctx->panes.panes[i].name, name) != 0)
+			continue;
 
-                struct pane *p = &ctx->panes.panes[i];
-                free(p->name);
-                canvas_deinit(p->canvas);
+		struct pane *p = &ctx->panes.panes[i];
+		free(p->name);
+		canvas_deinit(p->canvas);
 
-                for (size_t j = i + 1; j < ctx->panes.count; j++) {
-                        struct pane *q = &ctx->panes.panes[j];
-                        p->name = q->name;
-                        p->canvas = q->canvas;
+		for (size_t j = i + 1; j < ctx->panes.count; j++) {
+			struct pane *q = &ctx->panes.panes[j];
+			p->name = q->name;
+			p->canvas = q->canvas;
 
-                        p = q;
-                }
+			p = q;
+		}
 
-                ctx->panes.count--;
+		ctx->panes.count--;
 
-                pthread_mutex_unlock(&ctx->panes.lock);
-                return UI_OK;
-        }
+		pthread_mutex_unlock(&ctx->panes.lock);
+		return UI_OK;
+	}
 
-        pthread_mutex_unlock(&ctx->panes.lock);
-        return UI_NO_SUCH_PANE;
+	pthread_mutex_unlock(&ctx->panes.lock);
+	return UI_NO_SUCH_PANE;
+}
+
+enum ui_failure ui_pane_draw_rect(
+    struct ui_ctx *ctx, char *name, const struct rect *rect, struct color c)
+{
+	int r;
+
+	r = pthread_mutex_lock(&ctx->panes.lock);
+	if (r != 0)
+		FATAL_ERR(
+		    "ui_pane_draw_rect: failed to lock: %s\n", strerror(r));
+
+	struct pane *p = NULL;
+	for (size_t i = 0; i < ctx->panes.count; i++) {
+		p = &ctx->panes.panes[i];
+		if (strcmp(p->name, name) == 0)
+			break;
+	}
+
+	if (!p)
+		return UI_NO_SUCH_PANE;
+
+	rendering_draw_rect(p->canvas, rect, c);
+
+	pthread_mutex_unlock(&ctx->panes.lock);
+	return UI_OK;
 }

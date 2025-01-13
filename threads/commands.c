@@ -44,13 +44,18 @@ static char **collect_args(char *, size_t *, char **);
 
 static void act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
+static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
 
 static struct {
 	char *name;
 	act_t hook;
-} actions[] = { { "CREATE", act_create }, { "REMOVE", act_remove } };
+} actions[] = {
+	{ "CREATE", act_create },
+	{ "REMOVE", act_remove },
+	{ "RECT", act_rect },
+};
 
 void *cmd_thread(void *arg)
 {
@@ -264,6 +269,60 @@ static void act_remove(struct ui_ctx *ctx, char *target, size_t argc, char **)
 	enum ui_failure r = ui_pane_remove(ctx, target);
 	if (r != UI_OK)
 		fprintf(stderr, "act_remove: failed: %s", ui_failure_str(r));
+}
+
+static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+{
+	if (argc != 5) {
+		printf("failure: RECT requires args color x y w h.\n");
+		return;
+	}
+
+	struct color color;
+	if (!parse_color(argv[0], &color)) {
+		printf("failure: first argument is not a color.\n");
+		return;
+	}
+
+	size_t x, y, w, h;
+
+	char *end = NULL;
+	x = strtol(argv[1], &end, 0);
+	if (*end != '\0') {
+		printf("failure: second argument (x) is not a number.\n");
+		return;
+	}
+
+	y = strtol(argv[2], &end, 0);
+	if (*end != '\0') {
+		printf("failure: third argument (y) is not a number.\n");
+		return;
+	}
+
+	w = strtol(argv[3], &end, 0);
+	if (*end != '\0') {
+		printf("failure: fourth argument (w) is not a number.\n");
+		return;
+	}
+
+	h = strtol(argv[4], &end, 0);
+	if (*end != '\0') {
+		printf("failure: fifth argument (h) is not a number.\n");
+		return;
+	}
+
+	struct rect rect = {
+		.x = x,
+		.y = y,
+		.w = w,
+		.h = h,
+	};
+
+	enum ui_failure r = ui_pane_draw_rect(ctx, target, &rect, color);
+	if (r != UI_OK) {
+		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
+		return;
+	}
 }
 
 static bool parse_color(const char *in, struct color *out)

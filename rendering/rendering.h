@@ -1,10 +1,15 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 /* Encode a color. Alpha is assumed to always be 0xff. */
 struct color {
 	uint8_t r, g, b;
+};
+
+struct rect {
+	uint16_t x, y, w, h;
 };
 
 struct canvas;
@@ -19,4 +24,5 @@ struct canvas *canvas_init(struct rendering_ctx *);
 void canvas_deinit(struct canvas *);
 
 void rendering_fill(struct canvas *, struct color);
+void rendering_draw_rect(struct canvas *, const struct rect *, struct color);
 void rendering_show(struct rendering_ctx *, struct canvas *);

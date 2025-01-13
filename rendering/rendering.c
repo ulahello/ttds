@@ -105,8 +105,8 @@ void rendering_ctx_log(const struct rendering_ctx *ctx)
 	fprintf(stderr, "Buffer:\t%d (front), %d (back)\n",
 	    ctx->bufs[ctx->front_buf_idx].id,
 	    ctx->bufs[1 ^ ctx->front_buf_idx].id);
-	fprintf(stderr, "Mode:\t%dx%d @ %dHz\n", ctx->mode.hdisplay, ctx->mode.vdisplay,
-	    ctx->mode.vrefresh);
+	fprintf(stderr, "Mode:\t%dx%d @ %dHz\n", ctx->mode.hdisplay,
+	    ctx->mode.vdisplay, ctx->mode.vrefresh);
 }
 
 struct canvas *canvas_init(struct rendering_ctx *ctx)
@@ -141,6 +141,22 @@ void rendering_fill(struct canvas *c, struct color color)
 	}
 }
 
+void rendering_draw_rect(
+    struct canvas *c, const struct rect *rect, struct color color)
+{
+	uint8_t mapped[4] = { color.b, color.g, color.r, 0xFF };
+
+	uint16_t right_edge = rect->x + rect->w;
+	uint16_t bottom_edge = rect->y + rect->h;
+	for (uint16_t y = rect->y; y < bottom_edge && y < bottom_edge; y++) {
+		for (uint16_t x = rect->x; x < right_edge && x < c->width;
+		    x++) {
+			size_t off = (c->stride * y) + (x * sizeof(mapped));
+			memcpy(&c->buffer[off], mapped, sizeof(mapped));
+		}
+	}
+}
+
 void rendering_show(struct rendering_ctx *ctx, struct canvas *c)
 {
 	struct buffer back = ctx->bufs[1 ^ ctx->front_buf_idx];
@@ -158,7 +174,7 @@ void rendering_show(struct rendering_ctx *ctx, struct canvas *c)
 
 static void init_card(struct rendering_ctx *ctx)
 {
-        ctx->card_fd = find_card();
+	ctx->card_fd = find_card();
 
 	require_dumb_buffers(ctx->card_fd);
 	require_universal_planes(ctx->card_fd);
@@ -297,7 +313,7 @@ static void init_buf(struct rendering_ctx *ctx, size_t idx)
 
 static card_fd_t find_card(void)
 {
-        DIR *dris = opendir("/dev/dri");
+	DIR *dris = opendir("/dev/dri");
 
 	if (!dris)
 		FATAL_ERR("Failed to open /dev/dri: %s", STR_ERR);
