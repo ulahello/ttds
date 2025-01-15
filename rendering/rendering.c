@@ -155,39 +155,42 @@ void rendering_draw_circle(
 	uint16_t y = 0;
 	int32_t t1 = circle->r / 16;
 
-	// i copied this off wikipedia lol
 	while (x >= y) {
 		uint16_t eff_y = circle->y + y;
-		uint16_t eff_x = circle->x + x;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x + x; eff_x >= circle->x;
+		    eff_x--)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - y;
-		eff_x = circle->x + x;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x + x; eff_x >= circle->x;
+		    eff_x--)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - y;
-		eff_x = circle->x - x;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x - x; eff_x < circle->x; eff_x++)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + y;
-		eff_x = circle->x - x;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x - x; eff_x < circle->x; eff_x++)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + x;
-		eff_x = circle->x + y;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x + y; eff_x >= circle->x;
+		    eff_x--)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - x;
-		eff_x = circle->x + y;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x + y; eff_x >= circle->x;
+		    eff_x--)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - x;
-		eff_x = circle->x - y;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x - y; eff_x < circle->x; eff_x++)
+			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + x;
-		eff_x = circle->x - y;
-		draw_point(c, eff_x, eff_y, color);
+		for (uint16_t eff_x = circle->x - y; eff_x < circle->x; eff_x++)
+			draw_point(c, eff_x, eff_y, color);
 
 		y++;
 		t1 = t1 + y;
