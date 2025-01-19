@@ -107,8 +107,9 @@ void *ui_thread(void *arg)
 
 	fprintf(stderr, "rendering: terminating\n");
 
-	// We don't need to take the lock as the only thread that could be using
-	// it --- pane_handle --- has been pthread_join(3)ed.
+	if (pthread_mutex_lock(&ctx->panes.lock) != 0)
+		FATAL_ERR("Failed to lock panes.");
+
 	size_t len = ctx->panes.count;
 	for (size_t i = 0; i < len; i++) {
 		canvas_deinit(ctx->panes.panes[i].canvas);
