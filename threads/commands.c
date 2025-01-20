@@ -125,6 +125,8 @@ static void *cmd_inner(void *arg)
 		}
 
 		char *err = run(ctx->ui_ctx, &r.val.command);
+		ui_sync(ctx->ui_ctx);
+
 		if (err) {
 			printf("%s\n", err); // write to the client
 			fprintf(stderr, "cmd: run: %s\n",

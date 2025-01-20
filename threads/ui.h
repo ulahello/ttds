@@ -17,8 +17,8 @@ enum ui_failure {
 
 char *ui_failure_str(enum ui_failure);
 
-/* All of these functions must be called from *one thread* and *one thread
- * only.* There *will* be races if this is not the case */
+/* Flush an update to a pane. */
+void ui_sync(struct ui_ctx *ctx);
 
 /* Create a pane. */
 enum ui_failure ui_pane_create(

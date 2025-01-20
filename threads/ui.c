@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <bits/pthreadtypes.h>
+#include <bits/time.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdatomic.h>
@@ -14,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/poll.h>
+#include <time.h>
 #include <unistd.h>
 
 #define MAX_PANES 1024
@@ -36,6 +38,9 @@ struct ui_ctx {
 	struct pane_storage panes;
 
 	int cancellation_fd;
+
+	int sync_fd_rx;
+	int sync_fd_tx;
 };
 
 char *ui_failure_strs[] = {
@@ -85,6 +90,15 @@ struct ui_ctx *ui_ctx_new(void)
 	// around to making the pipe.
 	ctx->cancellation_fd = -1;
 
+	// sync_fd, on the other hand, can be initialized immediately.
+	int sync_fds[2];
+	if (pipe(sync_fds) != 0) {
+		FATAL_ERR("pipe(2) failed for sync fd's: %s", STR_ERR);
+	}
+
+	ctx->sync_fd_rx = sync_fds[0];
+	ctx->sync_fd_rx = sync_fds[1];
+
 	return ctx;
 }
 
@@ -122,17 +136,26 @@ void *ui_thread(void *arg)
 	return NULL;
 }
 
+void ui_sync(struct ui_ctx *ctx)
+{
+	char *data = { 0 };
+	write(ctx->sync_fd_tx, data, 1);
+}
+
 static void *rotate_panes(void *arg)
 {
 	int r;
 
 	struct ui_ctx *ctx = arg;
-	struct pollfd fds[1];
+	struct pollfd fds[2];
 	fds[0].fd = ctx->cancellation_fd;
 	fds[0].events = POLLIN;
+	fds[1].fd = ctx->sync_fd_rx;
+	fds[1].events = POLLIN;
+
+	int sleep_time = 1000;
 
 	for (size_t i = 0;; i++) {
-
 		r = pthread_mutex_lock(&ctx->panes.lock);
 
 		if (r != 0)
@@ -148,10 +171,25 @@ static void *rotate_panes(void *arg)
 		if (r != 0)
 			FATAL_ERR("ui: couldn't return lock: %s", strerror(r));
 
+		struct timespec a, b;
+		clock_gettime(CLOCK_MONOTONIC_RAW, &a); // TODO: error checking
+
 		// Do a cancellable 1-second sleep.
-		poll(fds, 1, 1000);
-		if (fds[0].revents &= POLLIN)
+		poll(fds, 1, sleep_time);
+		if (fds[0].revents &= POLLIN) {
+			// cancellation fd
 			break;
+		} else if (fds[1].revents &= POLLIN) {
+			// sync fd
+			clock_gettime(CLOCK_MONOTONIC_RAW, &b);
+			int delta = (b.tv_nsec / 1000 / 1000) -
+			    (a.tv_nsec / 1000 / 1000);
+
+			sleep_time -= delta;
+			continue;
+		} else {
+			sleep_time = 1000;
+		}
 	}
 
 	return NULL;
