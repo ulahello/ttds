@@ -37,10 +37,11 @@ struct cmd_ctx {
 };
 
 static void *cmd_inner(void *arg);
-static struct parse_result parse(char *input);
+static char *find_target(char **);
+static bool parse(char **input_cursor, struct parse_result *result);
 static char *run(struct ui_ctx *, const struct command *);
 static char *eat_whitespace(char *);
-static char **collect_args(char *, size_t *, char **);
+static char **collect_args(char **, size_t *, char **);
 
 static void act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
@@ -116,77 +117,89 @@ static void *cmd_inner(void *arg)
 			FATAL_ERR(
 			    "commands: couldn't read from stdin: %s", STR_ERR);
 
-		struct parse_result r = parse(line);
-
-		if (!r.ok) {
-			printf("parsing failed: %s\n", r.val.err);
-			free(r.val.err);
+		char *line_cursor = line;
+		char *target = find_target(&line_cursor);
+		if (!target) {
+			printf("target missing in command.\n");
 			continue;
 		}
 
-		char *err = run(ctx->ui_ctx, &r.val.command);
-		ui_sync(ctx->ui_ctx);
+		struct parse_result r;
+		while (parse(&line_cursor, &r)) {
+			if (!r.ok) {
+				printf("parsing failed: %s\n", r.val.err);
+				free(r.val.err);
+				continue;
+			}
 
-		if (err) {
-			printf("%s\n", err); // write to the client
-			fprintf(stderr, "cmd: run: %s\n",
-			    err); // write to the debug log
+			r.val.command.target_name = target;
+			char *err = run(ctx->ui_ctx, &r.val.command);
+
+			if (err) {
+				printf("%s\n", err); // write to the client
+				fprintf(stderr, "cmd: run: %s\n",
+				    err); // write to the debug log
+
+				break;
+			}
 		}
+
+		ui_sync(ctx->ui_ctx);
 	}
 
 	return NULL;
 }
 
-static struct parse_result parse(char *input)
+static char *find_target(char **input_cursor)
 {
-	// 0-copy tedious parser crap. it is so easy to get this wrong. I would
-	// use a parser generator or another prog lang, but it's not really
-	// worth it.
-	//
-	// Commands look like this:
-	// <target>: <action> <args>...
-	//
-	// These can be separated by as many ASCII whitespace characters as
-	// desired. Don't use broader UTF-8 whitespace; I'll cry.
-	struct parse_result result;
-
-	// Find the :
-	char *target_end = input;
+	char *target_end = *input_cursor;
 	for (; *target_end != ':' && *target_end != '\0'; target_end++)
 		;
 
-	if (target_end == input || *target_end == '\0') {
-		result.ok = false;
-		result.val.err = strdup("target name must be provided.");
-		return result;
+	if (target_end == *input_cursor || *target_end == '\0') {
+		return NULL;
 	}
 
 	*target_end = '\0';
+	char *target = *input_cursor;
 
-	char *action = eat_whitespace(&target_end[1]);
+	if (*target == '\0')
+		return NULL;
 
-	if (*action == '\0') {
-		result.ok = false;
-		result.val.err = strdup("action required");
-		return result;
-	}
+	*input_cursor = target_end + 1;
 
-	char *action_end = &action[1];
+	return target;
+}
+
+static bool parse(char **input_cursor, struct parse_result *result)
+{
+	// Commands look like this:
+	// <target>: <action> <args>...[; <action> <args>...]*
+	//
+	// These can be separated by as many ASCII whitespace characters as
+	// desired. Don't use broader UTF-8 whitespace; I'll cry.
+	//
+	// We just get this here after parse_target.
+	*input_cursor = eat_whitespace(*input_cursor);
+	if (**input_cursor == '\0')
+		return false;
+
+	char *action_end = *input_cursor;
 	while (*action_end != '\0' && !isspace(*action_end))
 		action_end++;
 
-	result.ok = true;
+	result->ok = true;
 
-	if (*action_end != '\0') {
+	char *arg_start = &action_end[1];
+	if (*action_end != '\0' && *action_end != ';') {
 		*action_end = '\0';
-		result.val.command.argc = 0;
-		result.val.command.argv = collect_args(
-		    &action_end[1], &result.val.command.argc, NULL);
+		result->val.command.argc = 0;
+		result->val.command.argv =
+		    collect_args(&arg_start, &result->val.command.argc, NULL);
 	}
 
-	result.val.command.target_name = input;
-	result.val.command.action = action;
-	// XXX: set command.args!
+	result->val.command.action = *input_cursor;
+	*input_cursor = arg_start;
 
 	return result;
 }
@@ -217,14 +230,20 @@ static char *eat_whitespace(char *x)
 	return x;
 }
 
-static char **collect_args(char *input, size_t *argc, char **argv)
+static char **collect_args(char **cursor, size_t *argc, char **argv)
 {
-	input = eat_whitespace(input);
-	if (*input == '\0')
+	char *input = eat_whitespace(*cursor);
+	if (*input == '\0') {
+		*cursor = input;
 		return argv;
+	} else if (*input == ';') {
+		*input = '\0';
+		*cursor = input + 1;
+		return argv;
+	}
 
 	char *input_end = input;
-	while (!isspace(*input_end) && *input_end != '\0')
+	while (!isspace(*input_end) && *input_end != '\0' && *input_end != ';')
 		input_end++;
 
 	(*argc)++;
@@ -236,12 +255,16 @@ static char **collect_args(char *input, size_t *argc, char **argv)
 
 	argv[*argc - 1] = input;
 
-	if (*input_end != '\0') {
+	if (*input_end == '\0') {
+		return argv;
+	} else if (*input_end == ';') {
+		*cursor = &input_end[1];
+		return argv;
+	} else {
 		*input_end = '\0';
-		return collect_args(&input_end[1], argc, argv);
+		*cursor = &input_end[1];
+		return collect_args(cursor, argc, argv);
 	}
-
-	return argv;
 }
 
 static void act_create(
