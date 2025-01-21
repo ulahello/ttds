@@ -138,8 +138,9 @@ void *ui_thread(void *arg)
 
 void ui_sync(struct ui_ctx *ctx)
 {
-	char *data = { 0 };
-	write(ctx->sync_fd_tx, data, 1);
+	char data[] = { 0 };
+	if (write(ctx->sync_fd_tx, data, 1) != 1)
+		fprintf(stderr, "failed to write to sync_fd_tx: %s", STR_ERR);
 }
 
 static void *rotate_panes(void *arg)

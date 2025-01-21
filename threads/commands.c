@@ -65,7 +65,8 @@ void *cmd_thread(void *arg)
 	struct cmd_ctx ctx;
 
 	int cancellation_pipe[2];
-	pipe(cancellation_pipe);
+	if (pipe(cancellation_pipe) != 0)
+		FATAL_ERR("commands: can't create cancellation pipe");
 
 	// TODO: print buffer dimensions to stdout in JSON format
 	ctx.ui_ctx = (struct ui_ctx *)arg;
