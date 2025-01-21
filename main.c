@@ -36,14 +36,60 @@ struct args {
 	enum backend backend;
 };
 
+static void print_usage(FILE *, const char *);
+static struct args parse_args(int argc, char **argv);
+
 const struct backend_opt backend_strings[BACKEND_COUNT] = {
 	// The first backend is treated as the default.
 	{ BACKEND_DRM, "DRM", "directly use the Linux DRM subsystem" },
 };
+
 // as a reminder to update this array when adding backends
 static_assert(BACKEND_COUNT == 1);
 
-void print_usage(FILE *f, const char *self)
+int main(int argc, char *argv[])
+{
+	// When running under webproc[1] for debugging, line buffering needs to
+	// be enabled explicitly. Otherwise, we don't get logs when we think we
+	// should get logs.
+	//
+	// [1]: https://github.com/atalii/webproc
+	setvbuf(stdout, NULL, _IOLBF, 32);
+	setvbuf(stderr, NULL, _IOLBF, 32);
+
+	// Parse command-line arguments. This only returns if they're valid.
+	const struct args args = parse_args(argc, argv);
+	const struct rendering_vtable vt = supported_backends[args.backend];
+
+	term_init(4);
+
+	// Prepare to block for SIGINT.
+	sigset_t f, b;
+	sigemptyset(&f);
+	sigaddset(&f, SIGINT);
+	sigprocmask(SIG_BLOCK, &f, &b);
+
+	// Spawn child threads.
+	struct ui_ctx *ui_ctx = ui_ctx_new(vt);
+	SPAWN_THREAD(ui_thread, ui_handle, ui_ctx);
+	SPAWN_THREAD(input_thread, input_handle, NULL);
+	SPAWN_THREAD(cmd_thread, cmd_handle, ui_ctx);
+
+	// Block for SIGINT.
+	for (int s = 0; s != SIGINT; sigwait(&f, &s)) {
+	}
+
+	fprintf(stderr, "SIGINT received; cleaning up.\n");
+	term();
+
+	pthread_join(input_handle, NULL);
+	pthread_join(ui_handle, NULL);
+	pthread_join(cmd_handle, NULL);
+
+	return 0;
+}
+
+static void print_usage(FILE *f, const char *self)
 {
 	fprintf(f, "Usage: %s [OPTION]...\n", self);
 
@@ -61,7 +107,7 @@ void print_usage(FILE *f, const char *self)
 	fprintf(f, "  \tPrint help.\n");
 }
 
-struct args parse_args(int argc, char *argv[])
+static struct args parse_args(int argc, char **argv)
 {
 	char *const self = argc > 0 ? argv[0] : "ttds";
 
@@ -116,46 +162,4 @@ struct args parse_args(int argc, char *argv[])
 	}
 
 	return args;
-}
-
-int main(int argc, char *argv[])
-{
-	// When running under webproc[1] for debugging, line buffering needs to
-	// be enabled explicitly. Otherwise, we don't get logs when we think we
-	// should get logs.
-	//
-	// [1]: https://github.com/atalii/webproc
-	setvbuf(stdout, NULL, _IOLBF, 32);
-	setvbuf(stderr, NULL, _IOLBF, 32);
-
-	// Parse command-line arguments. This only returns if they're valid.
-	const struct args args = parse_args(argc, argv);
-	const struct rendering_vtable vt = supported_backends[args.backend];
-
-	term_init(4);
-
-	// Prepare to block for SIGINT.
-	sigset_t f, b;
-	sigemptyset(&f);
-	sigaddset(&f, SIGINT);
-	sigprocmask(SIG_BLOCK, &f, &b);
-
-	// Spawn child threads.
-	struct ui_ctx *ui_ctx = ui_ctx_new(vt);
-	SPAWN_THREAD(ui_thread, ui_handle, ui_ctx);
-	SPAWN_THREAD(input_thread, input_handle, NULL);
-	SPAWN_THREAD(cmd_thread, cmd_handle, ui_ctx);
-
-	// Block for SIGINT.
-	for (int s = 0; s != SIGINT; sigwait(&f, &s)) {
-	}
-
-	fprintf(stderr, "SIGINT received; cleaning up.\n");
-	term();
-
-	pthread_join(input_handle, NULL);
-	pthread_join(ui_handle, NULL);
-	pthread_join(cmd_handle, NULL);
-
-	return 0;
 }
