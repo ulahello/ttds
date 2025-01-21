@@ -39,13 +39,10 @@ struct args {
 static void print_usage(FILE *, const char *);
 static struct args parse_args(int argc, char **argv);
 
-const struct backend_opt backend_strings[BACKEND_COUNT] = {
+const struct backend_opt backend_strings[] = {
 	// The first backend is treated as the default.
 	{ BACKEND_DRM, "DRM", "directly use the Linux DRM subsystem" },
 };
-
-// as a reminder to update this array when adding backends
-static_assert(BACKEND_COUNT == 1);
 
 int main(int argc, char *argv[])
 {
@@ -97,7 +94,7 @@ static void print_usage(FILE *f, const char *self)
 	fprintf(f, "      --backend <BACKEND>\n");
 	fprintf(f,
 	    "  \tSet the rendering backend to use. WARNING: currently case sensitive!\n");
-	for (size_t i = 0; i < BACKEND_COUNT; i++) {
+	for (size_t i = 0; i < backend_count; i++) {
 		struct backend_opt opt = backend_strings[i];
 		fprintf(f, "  \t  - \"%s\"%s: %s\n", opt.as_string,
 		    i == 0 ? " (default)" : "", opt.help);
@@ -140,7 +137,7 @@ static struct args parse_args(int argc, char **argv)
 			print_usage(stdout, self);
 			exit(0);
 		case 'b':
-			for (size_t i = 0; i < BACKEND_COUNT; i++) {
+			for (size_t i = 0; i < backend_count; i++) {
 				struct backend_opt opt = backend_strings[i];
 				// TODO: case sensitive is inconvenient
 				if (strcmp(optarg, opt.as_string) == 0) {

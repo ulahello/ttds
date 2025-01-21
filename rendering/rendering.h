@@ -12,7 +12,7 @@ struct rendering_vtable {
 
 enum backend {
 	BACKEND_DRM,
-	BACKEND_COUNT,
 };
 
-extern const struct rendering_vtable supported_backends[BACKEND_COUNT];
+extern const struct rendering_vtable supported_backends[];
+extern const size_t backend_count;
