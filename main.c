@@ -36,7 +36,7 @@ struct args {
 	enum backend backend;
 };
 
-static void print_usage(FILE *, const char *);
+static void print_usage(const char *);
 static struct args parse_args(int argc, char **argv);
 
 const struct backend_opt backend_strings[] = {
@@ -86,22 +86,22 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-static void print_usage(FILE *f, const char *self)
+static void print_usage(const char *self)
 {
-	fprintf(f, "Usage: %s [OPTION]...\n", self);
+	fprintf(stderr, "Usage: %s [OPTION]...\n", self);
 
 	// Generate help text for --backend flag.
-	fprintf(f, "      --backend <BACKEND>\n");
-	fprintf(f,
+	fprintf(stderr, "      --backend <BACKEND>\n");
+	fprintf(stderr,
 	    "  \tSet the rendering backend to use. WARNING: currently case sensitive!\n");
 	for (size_t i = 0; i < backend_count; i++) {
 		struct backend_opt opt = backend_strings[i];
-		fprintf(f, "  \t  - \"%s\"%s: %s\n", opt.as_string,
+		fprintf(stderr, "  \t  - \"%s\"%s: %s\n", opt.as_string,
 		    i == 0 ? " (default)" : "", opt.help);
 	}
 
-	fprintf(f, "  -h, --help\n");
-	fprintf(f, "  \tPrint help.\n");
+	fprintf(stderr, "  -h, --help\n");
+	fprintf(stderr, "  \tPrint help.\n");
 }
 
 static struct args parse_args(int argc, char **argv)
@@ -134,7 +134,7 @@ static struct args parse_args(int argc, char **argv)
 
 		switch (c) {
 		case 'h':
-			print_usage(stdout, self);
+			print_usage(self);
 			exit(0);
 		case 'b':
 			for (size_t i = 0; i < backend_count; i++) {
