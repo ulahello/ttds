@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <systemd/sd-bus.h>
@@ -92,8 +93,7 @@ static void print_usage(const char *self)
 
 	// Generate help text for --backend flag.
 	fprintf(stderr, "      --backend <BACKEND>\n");
-	fprintf(stderr,
-	    "  \tSet the rendering backend to use. WARNING: currently case sensitive!\n");
+	fprintf(stderr, "  \tSet the rendering backend to use.\n");
 	for (size_t i = 0; i < backend_count; i++) {
 		struct backend_opt opt = backend_strings[i];
 		fprintf(stderr, "  \t  - \"%s\"%s: %s\n", opt.as_string,
@@ -139,8 +139,7 @@ static struct args parse_args(int argc, char **argv)
 		case 'b':
 			for (size_t i = 0; i < backend_count; i++) {
 				struct backend_opt opt = backend_strings[i];
-				// TODO: case sensitive is inconvenient
-				if (strcmp(optarg, opt.as_string) == 0) {
+				if (strcasecmp(optarg, opt.as_string) == 0) {
 					args.backend = opt.backend;
 					goto found_backend;
 				}
