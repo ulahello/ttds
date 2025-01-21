@@ -74,14 +74,14 @@ void *cmd_thread(void *arg)
 
 	pthread_t reader;
 	if (pthread_create(&reader, NULL, cmd_inner, &ctx) != 0) {
-		FATAL_ERR("input: failed to spawn thread: %s", STR_ERR);
+		FATAL_ERR("commands: failed to spawn thread: %s", STR_ERR);
 	}
 
 	term_block();
 
 	uint8_t data = 0;
 	if (write(cancellation_pipe[1], &data, 1) != 1) {
-		fprintf(stderr, "input: failed to cancel reader thread\n");
+		fprintf(stderr, "commands: failed to cancel reader thread\n");
 	} else {
 		pthread_join(reader, NULL);
 	}
