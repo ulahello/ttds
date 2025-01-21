@@ -1,7 +1,7 @@
-#include "threads/ui.h"
+#include "../threads/ui.h"
 
+#include "../abort.h"
 #include "../rendering/rendering.h"
-#include "abort.h"
 #include "termination.h"
 
 #include <assert.h>
