@@ -114,8 +114,6 @@ static struct args parse_args(int argc, char **argv)
 
 	// i miss https://github.com/clap-rs/clap 💔
 
-	// TODO: detect extraneous arguments
-
 	while (true) {
 		int option_index = 0;
 		const struct option long_options[] = {
@@ -155,6 +153,11 @@ static struct args parse_args(int argc, char **argv)
 			assert(false && "unreachable");
 			abort();
 		}
+	}
+
+	if (optind != argc) {
+		fprintf(stderr, "too many arguments to %s.\n", self);
+		exit(1);
 	}
 
 	return args;
