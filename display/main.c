@@ -1,5 +1,6 @@
 #include "abort.h"
 #include "rendering/rendering.h"
+#include "testing.h"
 #include "threads/commands.h"
 #include "threads/input.h"
 #include "threads/termination.h"
@@ -35,6 +36,9 @@ struct backend_opt {
 
 struct args {
 	enum backend backend;
+
+	// If non-null, run the tests and dump pixel buffers here.
+	char *tests_dump_dir;
 };
 
 static void print_usage(const char *);
@@ -60,6 +64,13 @@ int main(int argc, char *argv[])
 	// Parse command-line arguments. This only returns if they're valid.
 	const struct args args = parse_args(argc, argv);
 	const struct rendering_vtable vt = supported_backends[args.backend];
+
+	// We might be asked to run the test cases. This isn't interactive, it
+	// just dumps the pixel buffers into a bespoke directory for diffing.
+	if (args.tests_dump_dir != NULL) {
+		run_tests(args.tests_dump_dir);
+		return 0;
+	}
 
 	term_init(4);
 
@@ -110,8 +121,10 @@ static struct args parse_args(int argc, char **argv)
 {
 	char *const self = argc > 0 ? argv[0] : "ttds";
 
+	// Initialize with default arguments.
 	struct args args = {
-		.backend = backend_strings[0].backend, // default
+		.backend = backend_strings[0].backend,
+		.tests_dump_dir = NULL,
 	};
 
 	// i miss https://github.com/clap-rs/clap 💔
@@ -121,6 +134,7 @@ static struct args parse_args(int argc, char **argv)
 		const struct option long_options[] = {
 			{ "help", 0, NULL, 'h' },
 			{ "backend", required_argument, NULL, 'b' },
+			{ "test", required_argument, NULL, 't' },
 			{ 0 }, // this must be terminated with some end
 			       // indicator since getopt does not accept a
 			       // length
@@ -148,6 +162,9 @@ static struct args parse_args(int argc, char **argv)
 			    optarg);
 			exit(1);
 		found_backend:
+			break;
+		case 't':
+			args.tests_dump_dir = optarg;
 			break;
 		case '?':
 			exit(1);

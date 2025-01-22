@@ -10,7 +10,7 @@ add_project_arguments([
 ], language : 'c')
 
 exe = executable('ttds',
-  'main.c',
+  'main.c', 'testing.c',
   'threads/ui.c', 'threads/input.c', 'threads/termination.c', 'threads/commands.c',
   'rendering/rendering.c', 'rendering/canvas.c',
   'rendering/backends/drm.c',

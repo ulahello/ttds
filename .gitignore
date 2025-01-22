@@ -1,4 +1,6 @@
-/display/build
+*.data
 *.swp
+/.cache
 /display/.cache
+/display/build
 /web/dist-newstyle
