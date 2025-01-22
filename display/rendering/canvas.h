@@ -1,5 +1,6 @@
 #pragma once
 
+#include <dirent.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -23,10 +24,8 @@ struct canvas {
 	uint8_t *buffer;
 };
 
-// NOTE: canvas_init is backend-specific, so is not defined here
+struct canvas *canvas_init_bgra(uint16_t width, uint16_t height);
 
-// TODO: kinda uncomfortable to separate init and deinit like this, assumes all
-// the allocations used malloc. sure, though.
 void canvas_deinit(struct canvas *);
 
 void rendering_fill(struct canvas *, struct color);
@@ -35,3 +34,6 @@ void rendering_draw_rect(struct canvas *, const struct rect *, struct color);
 
 void rendering_draw_circle(
     struct canvas *, const struct circle *, struct color);
+
+void rendering_dump_bgra_to_rgba(
+    const struct canvas *c, DIR *dir, const char *path);
