@@ -36,4 +36,4 @@ void rendering_draw_circle(
     struct canvas *, const struct circle *, struct color);
 
 void rendering_dump_bgra_to_rgba(
-    const struct canvas *c, DIR *dir, const char *path);
+    const struct canvas *c, DIR *dir, const char *dirpath, const char *path);

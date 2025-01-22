@@ -62,7 +62,7 @@ void run_these_tests(
 
 		// Save canvas as raw RGBA pixel data.
 		rendering_dump_bgra_to_rgba(
-		    canvas, dump_dir, tests[i].output_path);
+		    canvas, dump_dir, dump_dir_path, tests[i].output_path);
 		fprintf(stderr, "Wrote RGBA pixel data to file: %s/%s\n",
 		    dump_dir_path, tests[i].output_path);
 

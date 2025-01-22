@@ -111,24 +111,24 @@ void rendering_draw_circle(
 }
 
 void rendering_dump_bgra_to_rgba(
-    const struct canvas *c, DIR *dir, const char *path)
+    const struct canvas *c, DIR *dir, const char *dirpath, const char *path)
 {
 	const int fd = openat(dirfd(dir), path, O_RDWR | O_CREAT | O_TRUNC,
 	    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd < 0)
-		FATAL_ERR(
-		    "Failed to open file for writing: %s: %s", path, STR_ERR);
+		FATAL_ERR("Failed to open file for writing: %s/%s: %s", dirpath,
+		    path, STR_ERR);
 
 	const size_t buffer_size = (size_t)c->height * (size_t)c->stride;
 	if (ftruncate(fd, buffer_size) < 0)
-		FATAL_ERR("Failed to grow file to %zu bytes: %s: %s",
-		    buffer_size, path, STR_ERR);
+		FATAL_ERR("Failed to grow file to %zu bytes: %s/%s: %s",
+		    buffer_size, dirpath, path, STR_ERR);
 
 	uint8_t *const dst =
 	    mmap(NULL, buffer_size, PROT_WRITE, MAP_SHARED, fd, 0);
 	if (dst == MAP_FAILED)
-		FATAL_ERR(
-		    "Failed to mmap file for writing: %s: %s", path, STR_ERR);
+		FATAL_ERR("Failed to mmap file for writing: %s/%s: %s", dirpath,
+		    path, STR_ERR);
 
 	for (uint16_t y = 0; y < c->height; y++) {
 		for (uint16_t x = 0; x < c->width; x++) {
@@ -145,11 +145,12 @@ void rendering_dump_bgra_to_rgba(
 	}
 
 	if (munmap(dst, buffer_size) < 0)
-		FATAL_ERR(
-		    "Failed to unmap file contents: %s: %s", path, STR_ERR);
+		FATAL_ERR("Failed to unmap file contents: %s/%s: %s", dirpath,
+		    path, STR_ERR);
 
 	if (close(fd) < 0)
-		FATAL_ERR("Failed to close file: %s: %s", path, STR_ERR);
+		FATAL_ERR(
+		    "Failed to close file: %s/%s: %s", dirpath, path, STR_ERR);
 }
 
 static void draw_point(
