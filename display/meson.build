@@ -6,7 +6,7 @@ libdrm = dependency('libdrm')
 libsystemd = dependency('libsystemd')
 
 add_project_arguments([
-  '-pedantic', '-D_POSIX_C_SOURCE=200809L', '-D_FORTIFY_SOURCE=1'
+  '-pedantic', '-D_POSIX_C_SOURCE=200809L', '-D_FORTIFY_SOURCE=1',
 ], language : 'c')
 
 exe = executable('ttds',
@@ -15,6 +15,7 @@ exe = executable('ttds',
   'rendering/rendering.c', 'rendering/canvas.c',
   'rendering/backends/drm.c',
   install : true,
+  link_args : ['-lm'],
   dependencies : [ libdrm, libsystemd ])
 
 test('basic', exe)
