@@ -13,6 +13,7 @@ enum ui_failure {
 	UI_DUPLICATE,
 	UI_OOM,
 	UI_NO_SUCH_PANE,
+	UI_TOO_MANY_PANES,
 };
 
 char *ui_failure_str(enum ui_failure);

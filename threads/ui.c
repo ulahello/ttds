@@ -48,6 +48,7 @@ char *ui_failure_strs[] = {
 	[UI_DUPLICATE] = "duplicate pane",
 	[UI_OOM] = "oom",
 	[UI_NO_SUCH_PANE] = "targeted pane doesn't exist",
+	[UI_TOO_MANY_PANES] = "MAX_PANES would be exceeded",
 };
 
 char *ui_failure_str(enum ui_failure f)
@@ -213,7 +214,10 @@ enum ui_failure ui_pane_create(
 		}
 	}
 
-	assert(idx < MAX_PANES);
+	if (idx >= MAX_PANES) {
+		pthread_mutex_unlock(&ctx->panes.lock);
+		return UI_TOO_MANY_PANES;
+	}
 	struct pane *p = &ctx->panes.panes[idx];
 
 	p->name = strdup(name);
