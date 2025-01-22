@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 static void draw_point(struct canvas *, int32_t x, int32_t y, struct color);
@@ -112,13 +113,23 @@ void rendering_draw_circle(
 void rendering_dump_bgra_to_rgba(
     const struct canvas *c, DIR *dir, const char *path)
 {
-	const int fd = openat(dirfd(dir), path, O_WRONLY | O_CREAT | O_TRUNC,
+	const int fd = openat(dirfd(dir), path, O_RDWR | O_CREAT | O_TRUNC,
 	    S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd < 0)
 		FATAL_ERR(
 		    "Failed to open file for writing: %s: %s", path, STR_ERR);
 
-	// TODO(ula): buffered I/O. currently writing pixel at a time lol
+	const size_t buffer_size = (size_t)c->height * (size_t)c->stride;
+	if (ftruncate(fd, buffer_size) < 0)
+		FATAL_ERR("Failed to grow file to %zu bytes: %s: %s",
+		    buffer_size, path, STR_ERR);
+
+	uint8_t *const dst =
+	    mmap(NULL, buffer_size, PROT_WRITE, MAP_SHARED, fd, 0);
+	if (dst == MAP_FAILED)
+		FATAL_ERR(
+		    "Failed to mmap file for writing: %s: %s", path, STR_ERR);
+
 	for (uint16_t y = 0; y < c->height; y++) {
 		for (uint16_t x = 0; x < c->width; x++) {
 			const size_t idx = (c->stride * y) + (x * 4);
@@ -129,19 +140,13 @@ void rendering_dump_bgra_to_rgba(
 				c->buffer[idx + 3], // A
 			};
 
-			uint64_t written = 0;
-			while (written < sizeof(rgba_pixel)) {
-				const ssize_t result =
-				    write(fd, &rgba_pixel[written],
-					sizeof(rgba_pixel) - written);
-				if (result < 0)
-					FATAL_ERR(
-					    "Failed to write to file: %s: %s",
-					    path, STR_ERR);
-				written += result;
-			}
+			memcpy(&dst[idx], rgba_pixel, sizeof(rgba_pixel));
 		}
 	}
+
+	if (munmap(dst, buffer_size) < 0)
+		FATAL_ERR(
+		    "Failed to unmap file contents: %s: %s", path, STR_ERR);
 
 	if (close(fd) < 0)
 		FATAL_ERR("Failed to close file: %s: %s", path, STR_ERR);
