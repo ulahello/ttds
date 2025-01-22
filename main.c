@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
 	setvbuf(stdout, NULL, _IOLBF, 32);
 	setvbuf(stderr, NULL, _IOLBF, 32);
 
+	assert(backend_count == (sizeof(backend_strings) / sizeof(*backend_strings)));
+
 	// Parse command-line arguments. This only returns if they're valid.
 	const struct args args = parse_args(argc, argv);
 	const struct rendering_vtable vt = supported_backends[args.backend];
