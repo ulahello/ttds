@@ -113,6 +113,10 @@ static void print_usage(const char *self)
 		    i == 0 ? " (default)" : "", opt.help);
 	}
 
+	fprintf(stderr, "      --test <DIR>\n");
+	fprintf(stderr, "  \tRun the test cases and dump their pixel buffers into <DIR>.\n");
+	fprintf(stderr, "  \tThese can be manually diffed to verify the rendering code.\n");
+
 	fprintf(stderr, "  -h, --help\n");
 	fprintf(stderr, "  \tPrint help.\n");
 }
