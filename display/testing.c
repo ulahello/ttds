@@ -143,7 +143,7 @@ static void test_rects(struct canvas *c)
 
 static void test_circles(struct canvas *c)
 {
-	const float gr = (sqrtf(5.) - 1.) / 2.;
+	const double gr = (sqrt(5.) - 1.) / 2.;
 
 	// TODO: causes infinite loop as of
 	// 839a81d047fe6b3ffc867149804c7d6b413ecabf
@@ -151,20 +151,20 @@ static void test_circles(struct canvas *c)
 
 	// Draw some circles imitating a sunflower!
 	const size_t rmax = 3;
-	const float distance = rmax * 2.2;
+	const double distance = rmax * 2.2;
 
 	const size_t circle_count = PI *
-	    powf((min(c->width, c->height) - rmax) / 2., 2.) /
-	    powf(distance + rmax, 2.);
+	    pow((min(c->width, c->height) - rmax) / 2., 2.) /
+	    pow(distance + rmax, 2.);
 	for (size_t i = 1; i <= circle_count; i++) {
-		float p = (float)i / circle_count;
-		float px = sqrtf(p) * cosf(TAU * gr * i);
-		float py = sqrtf(p) * sinf(TAU * gr * i);
-		float x = (1. + px) * ((float)c->width / 2. - rmax) + rmax;
-		float y = (1. + py) * ((float)c->height / 2. - rmax) + rmax;
-		struct circle circle = { .x = roundf(x),
-			.y = roundf(y),
-			.r = roundf(1. + rmax * p) };
+		double p = (double)i / circle_count;
+		double px = sqrt(p) * cos(TAU * gr * i);
+		double py = sqrt(p) * sin(TAU * gr * i);
+		double x = (1. + px) * ((double)c->width / 2. - rmax) + rmax;
+		double y = (1. + py) * ((double)c->height / 2. - rmax) + rmax;
+		struct circle circle = { .x = round(x),
+			.y = round(y),
+			.r = round(1. + rmax * p) };
 		rendering_draw_circle(c, &circle, FG);
 	}
 }
