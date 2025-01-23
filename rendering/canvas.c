@@ -25,7 +25,7 @@ void rendering_draw_rect(
 {
 	uint16_t right_edge = rect->x + rect->w;
 	uint16_t bottom_edge = rect->y + rect->h;
-	for (uint16_t y = rect->y; y < bottom_edge && y < bottom_edge; y++)
+	for (uint16_t y = rect->y; y < bottom_edge && y < c->height; y++)
 		for (uint16_t x = rect->x; x < right_edge && x < c->width; x++)
 			draw_point(c, x, y, color);
 }
