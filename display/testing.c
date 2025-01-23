@@ -15,13 +15,10 @@
 #define PI 3.141592653589793238462
 #define TAU (2. * PI)
 
-static inline intmax_t min(intmax_t a, intmax_t b)
-{
-	return a < b ? a : b;
-}
+static inline intmax_t min(intmax_t a, intmax_t b);
 
-const struct color BG = { .r = 0x3A, .g = 0x22, .b = 0xBD };
-const struct color FG = { .r = 0xFF, .g = 0xFF, .b = 0xFF };
+static const struct color BG = { .r = 0x3A, .g = 0x22, .b = 0xBD };
+static const struct color FG = { .r = 0xFF, .g = 0xFF, .b = 0xFF };
 
 struct test {
 	struct color fill_color;
@@ -30,7 +27,40 @@ struct test {
 	uint16_t width, height;
 };
 
-void run_these_tests(
+static void run_these_tests(
+    const char *dump_dir_path, const struct test tests[], size_t num_tests);
+
+static void test_rects(struct canvas *c);
+static void test_circles(struct canvas *c);
+
+void run_tests(const char *dump_dir)
+{
+	struct test tests[] = {
+		{
+		    .fill_color = BG,
+		    .draw_fn = test_rects,
+		    .output_path = "rects.data",
+		    .width = 32,
+		    .height = 32,
+		},
+		{
+		    .fill_color = BG,
+		    .draw_fn = test_circles,
+		    .output_path = "circles.data",
+		    .width = 128,
+		    .height = 128,
+		},
+	};
+
+	run_these_tests(dump_dir, tests, sizeof(tests) / sizeof(*tests));
+}
+
+static inline intmax_t min(intmax_t a, intmax_t b)
+{
+	return a < b ? a : b;
+}
+
+static void run_these_tests(
     const char *dump_dir_path, const struct test tests[], size_t num_tests)
 {
 	// Open (or create) the dump directory. Test output paths are relative
@@ -70,7 +100,7 @@ void run_these_tests(
 	}
 }
 
-void test_rects(struct canvas *c)
+static void test_rects(struct canvas *c)
 {
 	// Draw tiny glider.
 	const uint16_t glider[5][2] = {
@@ -111,7 +141,7 @@ void test_rects(struct canvas *c)
 	}
 }
 
-void test_circles(struct canvas *c)
+static void test_circles(struct canvas *c)
 {
 	const float gr = (sqrtf(5.) - 1.) / 2.;
 
@@ -137,26 +167,4 @@ void test_circles(struct canvas *c)
 			.r = roundf(1. + rmax * p) };
 		rendering_draw_circle(c, &circle, FG);
 	}
-}
-
-void run_tests(const char *dump_dir)
-{
-	struct test tests[] = {
-		{
-		    .fill_color = BG,
-		    .draw_fn = test_rects,
-		    .output_path = "rects.data",
-		    .width = 32,
-		    .height = 32,
-		},
-		{
-		    .fill_color = BG,
-		    .draw_fn = test_circles,
-		    .output_path = "circles.data",
-		    .width = 128,
-		    .height = 128,
-		},
-	};
-
-	run_these_tests(dump_dir, tests, sizeof(tests) / sizeof(*tests));
 }
