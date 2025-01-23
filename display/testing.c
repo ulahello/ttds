@@ -15,7 +15,7 @@
 #define PI 3.141592653589793238462
 #define TAU (2. * PI)
 
-static inline int32_t min(int32_t a, int32_t b)
+static inline intmax_t min(intmax_t a, intmax_t b)
 {
 	return a < b ? a : b;
 }
@@ -128,13 +128,13 @@ void test_circles(struct canvas *c)
 	    powf(distance + rmax, 2.);
 	for (size_t i = 1; i <= circle_count; i++) {
 		float p = (float)i / circle_count;
-		float px = sqrt(p) * cosf(TAU * gr * i);
-		float py = sqrt(p) * sinf(TAU * gr * i);
+		float px = sqrtf(p) * cosf(TAU * gr * i);
+		float py = sqrtf(p) * sinf(TAU * gr * i);
 		float x = (1. + px) * ((float)c->width / 2. - rmax) + rmax;
 		float y = (1. + py) * ((float)c->height / 2. - rmax) + rmax;
-		struct circle circle = {
-			.x = roundf(x), .y = roundf(y), .r = 1. + rmax * p
-		};
+		struct circle circle = { .x = roundf(x),
+			.y = roundf(y),
+			.r = roundf(1. + rmax * p) };
 		rendering_draw_circle(c, &circle, FG);
 	}
 }
