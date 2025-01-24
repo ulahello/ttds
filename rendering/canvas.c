@@ -37,7 +37,7 @@ void rendering_draw_circle(
 	uint16_t y = 0;
 	int32_t t1 = circle->r / 16;
 
-	while (x >= y) {
+	while (x > 0 && x >= y) {
 		uint16_t eff_y = circle->y + y;
 		for (uint16_t eff_x = circle->x + x; eff_x >= circle->x;
 		    eff_x--)
