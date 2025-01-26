@@ -4,7 +4,7 @@ module Main where
 
 import Auth (TokenStore, initTokenStore, verifyAdmin)
 import Control.Monad.IO.Class (liftIO)
-import Data.Text.Lazy (pack)
+import Data.Text.Lazy (pack, toStrict)
 import GHC.Conc (atomically)
 import Network.HTTP.Types.Status (unauthorized401)
 import Proc (Proc, call, launch)
@@ -12,7 +12,9 @@ import System.Environment (getArgs)
 import Web.Scotty (ActionM, finish, header, notFound, pathParam, post, scotty, status, text)
 
 main :: IO ()
-main = getArgs >>= launch >>= \proc -> initTokenStore >>= runWebServer proc
+main = getArgs >>= launch >>= runWithProc
+  where
+    runWithProc proc = initTokenStore >>= runWebServer proc
 
 runWebServer :: Proc -> TokenStore -> IO ()
 runWebServer proc ts =
@@ -25,7 +27,7 @@ runWebServer proc ts =
 requireAdmin :: TokenStore -> ActionM ()
 requireAdmin ts = header "Auth" >>= isOk >>= verify
   where
-    isOk (Just token) = liftIO (atomically $ verifyAdmin ts token)
+    isOk (Just token) = liftIO $ atomically $ verifyAdmin ts $ toStrict token
     isOk Nothing = return False
 
     verify True = return ()

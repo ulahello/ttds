@@ -2,33 +2,45 @@
 
 module Auth (TokenStore, initTokenStore, verifyToken, verifyAdmin) where
 
-import Data.ByteString.Lazy (ByteString)
+import Control.Exception (Exception, throwIO)
+import Crypto.Scrypt (EncryptedPass (..), Pass (..), verifyPass')
+import Data.ByteString.Char8 (pack)
 import Data.Functor ((<&>))
-import qualified Data.Text.Lazy as Data.Lazy
-import Data.Text.Lazy.Encoding (encodeUtf8)
+import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 import GHC.Conc (STM, TVar, readTVar)
 import GHC.Conc.Sync (newTVarIO)
 
-type Token = Data.Lazy.Text -- UUID
+data BadPassfileException = WrongSpec | CantDecode deriving (Show)
+
+instance Exception BadPassfileException
+
+type Token = Text -- UUID
 
 --  A named resource. Likely a pane.
 type Name = String
 
-type Hashed = ByteString
-
 type TokenStore = TVar TokenStoreInner
 
 newtype TokenStoreInner = TokenStoreInner
-  {adminTok :: Hashed}
+  {adminCred :: EncryptedPass}
 
 initTokenStore :: IO TokenStore
-initTokenStore = newTVarIO $ TokenStoreInner {adminTok = "hardcoded-lmao"}
+initTokenStore =
+  readFile "admin.pass" >>= getCreds >>= \cred ->
+    newTVarIO $
+      TokenStoreInner
+        { adminCred = EncryptedPass {getEncryptedPass = cred}
+        }
+  where
+    getCreds file = parse $ lines file
+    parse [cred] = return $ pack cred
+    parse _ = throwIO WrongSpec
 
 verifyToken :: TokenStore -> Token -> Name -> STM Bool
 verifyToken _ _ _ = return False
 
 verifyAdmin :: TokenStore -> Token -> STM Bool
-verifyAdmin ts tok = readTVar ts <&> (== hash tok) . adminTok
-
-hash :: Token -> Hashed
-hash = encodeUtf8
+verifyAdmin ts tok = readTVar ts <&> verify
+  where
+    verify ts' = verifyPass' (Pass {getPass = encodeUtf8 tok}) (adminCred ts')
