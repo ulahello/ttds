@@ -5,6 +5,7 @@
 #include <bits/pthreadtypes.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -49,6 +50,7 @@ static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
+static bool parse_args(const char *fmt, size_t argc, char **argv, ...);
 
 static struct {
 	char *name;
@@ -271,28 +273,20 @@ static char **collect_args(char **cursor, size_t *argc, char **argv)
 static void act_create(
     struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	if (argc != 1) {
-		printf("failure: CREATE requires exactly one argument\n");
-		return;
-	}
-
 	struct color fill;
-	if (!parse_color(argv[0], &fill)) {
-		printf("failure: given color is not valid.\n");
+	if (!parse_args("c", argc, argv, &fill))
 		return;
-	}
 
 	enum ui_failure r = ui_pane_create(ctx, target, fill);
 	if (r != UI_OK)
 		fprintf(stderr, "act_create: failed: %s\n", ui_failure_str(r));
 }
 
-static void act_remove(struct ui_ctx *ctx, char *target, size_t argc, char **)
+static void act_remove(
+    struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	if (argc != 0) {
-		printf("failure: REMOVE requires no arguments.\n");
+	if (!parse_args("", argc, argv))
 		return;
-	}
 
 	enum ui_failure r = ui_pane_remove(ctx, target);
 	if (r != UI_OK)
@@ -301,50 +295,12 @@ static void act_remove(struct ui_ctx *ctx, char *target, size_t argc, char **)
 
 static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	if (argc != 5) {
-		printf("failure: RECT requires args color x y w h.\n");
-		return;
-	}
-
 	struct color color;
-	if (!parse_color(argv[0], &color)) {
-		printf("failure: first argument is not a color.\n");
+	struct rect rect;
+
+	if (!parse_args("ciiii", argc, argv, &color, &rect.x, &rect.y, &rect.w,
+		&rect.h))
 		return;
-	}
-
-	size_t x, y, w, h;
-
-	char *end = NULL;
-	x = strtol(argv[1], &end, 0);
-	if (*end != '\0') {
-		printf("failure: second argument (x) is not a number.\n");
-		return;
-	}
-
-	y = strtol(argv[2], &end, 0);
-	if (*end != '\0') {
-		printf("failure: third argument (y) is not a number.\n");
-		return;
-	}
-
-	w = strtol(argv[3], &end, 0);
-	if (*end != '\0') {
-		printf("failure: fourth argument (w) is not a number.\n");
-		return;
-	}
-
-	h = strtol(argv[4], &end, 0);
-	if (*end != '\0') {
-		printf("failure: fifth argument (h) is not a number.\n");
-		return;
-	}
-
-	struct rect rect = {
-		.x = x,
-		.y = y,
-		.w = w,
-		.h = h,
-	};
 
 	enum ui_failure r = ui_pane_draw_rect(ctx, target, &rect, color);
 	if (r != UI_OK) {
@@ -356,47 +312,16 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 static void act_circle(
     struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	if (argc != 4) {
-		printf("failure: RECT requires args color x y r.\n");
-		return;
-	}
-
 	struct color color;
-	if (!parse_color(argv[0], &color)) {
-		printf("failure: first argument is not a color.\n");
+	struct circle circle;
+
+	if (!parse_args(
+		"ciii", argc, argv, &color, &circle.x, &circle.y, &circle.r))
 		return;
-	}
 
-	size_t x, y, r;
+	enum ui_failure r = ui_pane_draw_circle(ctx, target, &circle, color);
 
-	char *end = NULL;
-	x = strtol(argv[1], &end, 0);
-	if (*end != '\0') {
-		printf("failure: second argument (x) is not a number.\n");
-		return;
-	}
-
-	y = strtol(argv[2], &end, 0);
-	if (*end != '\0') {
-		printf("failure: third argument (y) is not a number.\n");
-		return;
-	}
-
-	r = strtol(argv[3], &end, 0);
-	if (*end != '\0') {
-		printf("failure: fourth argument (r) is not a number.\n");
-		return;
-	}
-
-	struct circle circle = {
-		.x = x,
-		.y = y,
-		.r = r,
-	};
-
-	enum ui_failure result =
-	    ui_pane_draw_circle(ctx, target, &circle, color);
-	if (result != UI_OK) {
+	if (r != UI_OK) {
 		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
 		return;
 	}
@@ -418,6 +343,53 @@ static bool parse_color(const char *in, struct color *out)
 	out->r = result >> 16;
 	out->g = result >> 8 & 0xff;
 	out->b = result & 0xff;
+
+	return true;
+}
+
+static bool parse_args(const char *fmt, size_t argc, char **argv, ...)
+{
+	va_list args;
+	va_start(args, argv);
+
+	if (argc != strlen(fmt)) {
+		printf("failure: got %zu arguments, expected %lu.\n", argc,
+		    strlen(fmt));
+		return false;
+	}
+
+	for (size_t i = 0; *fmt != '\0'; fmt++, i++) {
+		char c = *fmt;
+		char *in = argv[i];
+
+		switch (c) {
+		case 'c':
+			struct color *cout = va_arg(args, struct color *);
+			if (!parse_color(in, cout)) {
+				printf(
+				    "failure: expected color, got: %s\n", in);
+				return false;
+			}
+
+			break;
+		case 'i':
+			size_t *out = va_arg(args, size_t *);
+			char *end = NULL;
+			*out = strtol(argv[i], &end, 0);
+			if (*end != '\0') {
+				printf(
+				    "failure: expected number, got: %s\n", in);
+				return false;
+			}
+			break;
+		default:
+			// Violently explode in lieu of proper compile-time type
+			// checks.
+			FATAL_ERR("unrecognized fmt parameter: %c", c);
+		}
+	}
+
+	va_end(args);
 
 	return true;
 }
