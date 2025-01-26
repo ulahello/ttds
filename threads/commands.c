@@ -16,6 +16,7 @@
 #define MAX_CMD_LEN 1024
 
 typedef void (*act_t)(struct ui_ctx *, char *target, size_t argc, char **argv);
+typedef void (*cmd_t)(void);
 
 struct command {
 	char *target_name;
@@ -40,6 +41,7 @@ struct cmd_ctx {
 static void *cmd_inner(void *arg);
 static char *find_target(char **);
 static bool parse(char **input_cursor, struct parse_result *result);
+static bool find_cmd(const char *);
 static char *run(struct ui_ctx *, const struct command *);
 static char *eat_whitespace(char *);
 static char **collect_args(char **, size_t *, char **);
@@ -48,6 +50,8 @@ static void act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
+
+static void cmd_term(void);
 
 static bool parse_color(const char *in, struct color *out);
 static bool parse_args(const char *fmt, size_t argc, char **argv, ...);
@@ -60,6 +64,13 @@ static struct {
 	{ "REMOVE", act_remove },
 	{ "RECT", act_rect },
 	{ "CIRCLE", act_circle },
+};
+
+static struct {
+	char *name;
+	cmd_t hook;
+} commands[] = {
+	{ "TERMINATE", cmd_term },
 };
 
 void *cmd_thread(void *arg)
@@ -119,6 +130,15 @@ static void *cmd_inner(void *arg)
 		if (!fgets(line, MAX_CMD_LEN, stdin))
 			FATAL_ERR(
 			    "commands: couldn't read from stdin: %s", STR_ERR);
+
+		// Trim newline.
+		size_t len = strlen(line);
+		if (len >= 1)
+			line[len - 1] = '\0';
+
+		printf("%s!\n", line);
+		if (find_cmd(line))
+			continue;
 
 		char *line_cursor = line;
 		char *target = find_target(&line_cursor);
@@ -205,6 +225,18 @@ static bool parse(char **input_cursor, struct parse_result *result)
 	*input_cursor = arg_start;
 
 	return result;
+}
+
+static bool find_cmd(const char *line)
+{
+	for (size_t i = 0; i < sizeof(commands) / sizeof(*commands); i++) {
+		if (strcmp(line, commands[i].name) == 0) {
+			commands[i].hook();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static char *run(struct ui_ctx *ctx, const struct command *c)
@@ -325,6 +357,11 @@ static void act_circle(
 		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
 		return;
 	}
+}
+
+static void cmd_term(void)
+{
+	term();
 }
 
 static bool parse_color(const char *in, struct color *out)
