@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void draw_point(struct canvas *, uint16_t x, uint16_t y, struct color);
+static void draw_point(struct canvas *, int32_t x, int32_t y, struct color);
 
 void canvas_deinit(struct canvas *c)
 {
@@ -38,40 +38,36 @@ void rendering_draw_circle(
 	int32_t t1 = circle->r / 16;
 
 	while (x > 0 && x >= y) {
-		uint16_t eff_y = circle->y + y;
-		for (uint16_t eff_x = circle->x + x; eff_x >= circle->x;
-		    eff_x--)
+		int32_t eff_y = circle->y + y;
+		for (int32_t eff_x = circle->x + x; eff_x >= circle->x; eff_x--)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - y;
-		for (uint16_t eff_x = circle->x + x; eff_x >= circle->x;
-		    eff_x--)
+		for (int32_t eff_x = circle->x + x; eff_x >= circle->x; eff_x--)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - y;
-		for (uint16_t eff_x = circle->x - x; eff_x < circle->x; eff_x++)
+		for (int32_t eff_x = circle->x - x; eff_x < circle->x; eff_x++)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + y;
-		for (uint16_t eff_x = circle->x - x; eff_x < circle->x; eff_x++)
+		for (int32_t eff_x = circle->x - x; eff_x < circle->x; eff_x++)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + x;
-		for (uint16_t eff_x = circle->x + y; eff_x >= circle->x;
-		    eff_x--)
+		for (int32_t eff_x = circle->x + y; eff_x >= circle->x; eff_x--)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - x;
-		for (uint16_t eff_x = circle->x + y; eff_x >= circle->x;
-		    eff_x--)
+		for (int32_t eff_x = circle->x + y; eff_x >= circle->x; eff_x--)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y - x;
-		for (uint16_t eff_x = circle->x - y; eff_x < circle->x; eff_x++)
+		for (int32_t eff_x = circle->x - y; eff_x < circle->x; eff_x++)
 			draw_point(c, eff_x, eff_y, color);
 
 		eff_y = circle->y + x;
-		for (uint16_t eff_x = circle->x - y; eff_x < circle->x; eff_x++)
+		for (int32_t eff_x = circle->x - y; eff_x < circle->x; eff_x++)
 			draw_point(c, eff_x, eff_y, color);
 
 		y++;
@@ -85,12 +81,13 @@ void rendering_draw_circle(
 }
 
 static void draw_point(
-    struct canvas *c, uint16_t x, uint16_t y, struct color color)
+    struct canvas *c, int32_t x, int32_t y, struct color color)
 {
 	// Drawing a point out of bounds is a no-op. This is
 	// especially important given that we're receiving
 	// arbitrary commands.
-	if (c->width <= x || c->height <= y)
+	if (c->width <= x || c->height <= y || x < 0 || y < 0 ||
+	    x > UINT16_MAX || y > UINT16_MAX)
 		return;
 
 	// Color space is little endian, thus the BGRA format used below:
