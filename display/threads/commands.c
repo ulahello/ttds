@@ -1,6 +1,6 @@
-#include "abort.h"
+#include "../abort.h"
 #include "termination.h"
-#include "threads/ui.h"
+#include "ui.h"
 
 #include <bits/pthreadtypes.h>
 #include <ctype.h>
@@ -243,8 +243,6 @@ static char *run(struct ui_ctx *ctx, const struct command *c)
 {
 	for (size_t i = 0; i < sizeof(actions) / sizeof(*actions); i++) {
 		if (strcmp(c->action, actions[i].name) == 0) {
-			// lol. should malloc an argv for each command. gotta do
-			// that for bg color
 			actions[i].hook(ctx, c->target_name, c->argc, c->argv);
 			if (c->argv)
 				free(c->argv);
