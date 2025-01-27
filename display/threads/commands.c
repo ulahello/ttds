@@ -136,7 +136,6 @@ static void *cmd_inner(void *arg)
 		if (len >= 1)
 			line[len - 1] = '\0';
 
-		printf("%s!\n", line);
 		if (find_cmd(line))
 			continue;
 
