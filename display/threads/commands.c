@@ -147,7 +147,7 @@ static void *cmd_inner(void *arg)
 			continue;
 		}
 
-		struct parse_result r;
+		struct parse_result r = { 0 };
 		while (parse(&line_cursor, &r)) {
 			if (!r.ok) {
 				printf("parsing failed: %s\n", r.val.err);
