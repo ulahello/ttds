@@ -1,0 +1,5 @@
+
+        display
+
+Uses libdrm to display shapes and colors on a dumb buffer mapped onto the
+screen.

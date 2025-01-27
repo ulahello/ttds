@@ -1,0 +1,6 @@
+
+        Toy Display Server
+
+This is a toy display server implementation built off of dumb buffer
+manipulation via libdrm. The main display controller (/display) executes
+commands from stdin, which can optionally be provided via a web server (/web).

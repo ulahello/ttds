@@ -1,0 +1,5 @@
+
+        web
+
+Web wrapper of the display server. Handles auth and adds some higher level
+concepts.
