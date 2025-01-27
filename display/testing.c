@@ -73,6 +73,7 @@ static void run_these_tests(
 			    dump_dir_path, STR_ERR);
 	}
 	DIR *dump_dir = opendir(dump_dir_path);
+
 	if (dump_dir == NULL)
 		FATAL_ERR(
 		    "Failed to open directory: %s: %s", dump_dir_path, STR_ERR);
@@ -98,6 +99,9 @@ static void run_these_tests(
 
 		canvas_deinit(canvas);
 	}
+
+	if (closedir(dump_dir) != 0)
+		FATAL_ERR("couldn't close dir: %s", STR_ERR);
 }
 
 static void test_rects(struct canvas *c)
@@ -162,9 +166,9 @@ static void test_circles(struct canvas *c)
 		double py = sqrt(p) * sin(TAU * gr * i);
 		double x = (1. + px) * ((double)c->width / 2. - rmax) + rmax;
 		double y = (1. + py) * ((double)c->height / 2. - rmax) + rmax;
-		struct circle circle = { .x = round(x),
-			.y = round(y),
-			.r = round(1. + rmax * p) };
+		struct circle circle = {
+			.x = round(x), .y = round(y), .r = round(1. + rmax * p)
+		};
 		rendering_draw_circle(c, &circle, FG);
 	}
 }
