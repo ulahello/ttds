@@ -2,15 +2,14 @@
 #include "termination.h"
 #include "ui.h"
 
-#include <bits/pthreadtypes.h>
 #include <ctype.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/poll.h>
 #include <unistd.h>
 
 #define MAX_CMD_LEN 1024

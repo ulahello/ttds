@@ -3,7 +3,6 @@
 #include "../abort.h"
 #include "termination.h"
 
-#include <bits/pthreadtypes.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/input-event-codes.h>
@@ -16,7 +15,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
-#include <sys/poll.h>
 #include <sys/types.h>
 #include <systemd/sd-bus-protocol.h>
 #include <systemd/sd-bus.h>
