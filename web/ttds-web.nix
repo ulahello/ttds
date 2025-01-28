@@ -1,5 +1,5 @@
 { mkDerivation, base, base64, bytestring, http-types, lib, process
-, scotty_0_22, scrypt, text
+, scotty_0_22, scrypt, text, containers, stm, uuid
 }:
 mkDerivation {
   pname = "ttds-web";
@@ -8,7 +8,7 @@ mkDerivation {
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
-    base base64 bytestring http-types process scotty_0_22 scrypt text
+    base base64 bytestring http-types process scotty_0_22 scrypt text containers stm uuid
   ];
   license = lib.licenses.mpl20;
   mainProgram = "ttds-web";
