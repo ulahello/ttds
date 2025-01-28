@@ -1,13 +1,20 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ stdenv
+  , meson
+  , ninja
+  , pkg-config
+  , cmake
+  , libdrm
+  , systemdLibs
+}:
 
-pkgs.stdenv.mkDerivation {
+stdenv.mkDerivation {
   pname = "ttds-display-testing";
   version = "0.1.0";
-  src = ./.;
+  src = ../.;
 
   mesonFlags = [ "-Db_sanitize=address" "--buildtype=debugoptimized" ];
 
-  nativeBuildInputs = with pkgs; [ meson ninja pkg-config cmake libdrm systemdLibs ];
+  nativeBuildInputs = [ meson ninja pkg-config cmake libdrm systemdLibs ];
 
   installPhase = ''
     mesonInstallPhase
