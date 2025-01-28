@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <drm.h>
+#include <drm/drm.h>
 #include <drm_mode.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -311,13 +312,11 @@ static card_fd_t find_card(void)
 
 static void require_dumb_buffers(card_fd_t card_fd)
 {
-	struct drm_get_cap cap = { 0 };
-	cap.capability = DRM_CAP_DUMB_BUFFER;
-
-	if (ioctl(card_fd, DRM_IOCTL_GET_CAP, &cap) < 0)
+	uint64_t cap = 0;
+	if (drmGetCap(card_fd, DRM_CAP_DUMB_BUFFER, &cap) < 0)
 		FATAL_ERR("DRM_IOCTL_GET_CAP failed: %s", strerror(errno));
 
-	if (cap.value == 0)
+	if (!cap)
 		FATAL_ERR("Device doesn't support dumb buffers.");
 }
 
