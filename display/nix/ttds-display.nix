@@ -5,6 +5,9 @@
   , cmake
   , libdrm
   , systemdLibs
+  , lib
+
+  , sanitize ? true
 }:
 
 stdenv.mkDerivation {
@@ -12,7 +15,7 @@ stdenv.mkDerivation {
   version = "0.1.0";
   src = ../.;
 
-  mesonFlags = [ "-Db_sanitize=address" "--buildtype=debugoptimized" ];
+  mesonFlags = [ "--buildtype=debugoptimized" ] ++ lib.optional sanitize [ "-Db_sanitize=address" ];
 
   nativeBuildInputs = [ meson ninja pkg-config cmake libdrm systemdLibs ];
 
