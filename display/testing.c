@@ -149,9 +149,8 @@ static void test_circles(struct canvas *c)
 {
 	const double gr = (sqrt(5.) - 1.) / 2.;
 
-	// TODO: causes infinite loop as of
-	// 839a81d047fe6b3ffc867149804c7d6b413ecabf
-	/* rendering_draw_circle(c, &(struct circle) { 0 }, BG); */
+	// No-op.
+	rendering_draw_circle(c, &(struct circle) { 0 }, BG);
 
 	// Draw some circles imitating a sunflower!
 	const size_t rmax = 3;
