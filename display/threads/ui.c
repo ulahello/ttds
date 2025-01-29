@@ -297,8 +297,10 @@ enum ui_failure ui_pane_draw_rect(
 			break;
 	}
 
-	if (!p)
+	if (!p) {
+		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_NO_SUCH_PANE;
+	}
 
 	rendering_draw_rect(p->canvas, rect, c);
 
@@ -323,8 +325,10 @@ enum ui_failure ui_pane_draw_circle(
 			break;
 	}
 
-	if (!p)
+	if (!p) {
+		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_NO_SUCH_PANE;
+	}
 
 	rendering_draw_circle(p->canvas, circle, c);
 
