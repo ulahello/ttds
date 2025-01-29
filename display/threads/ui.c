@@ -225,12 +225,15 @@ enum ui_failure ui_pane_create(
 	struct pane *p = &ctx->panes.panes[idx];
 
 	p->name = strdup(name);
-	if (!p->name)
+	if (!p->name) {
+		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_OOM;
+	}
 
 	p->canvas = ctx->vt.canvas_init(ctx->r_ctx);
 	if (!p->canvas) {
 		free(p->name);
+		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_OOM;
 	}
 
