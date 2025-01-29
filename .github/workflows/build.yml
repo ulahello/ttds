@@ -2,7 +2,7 @@ name: "build"
 on: [push, pull_request]
 
 jobs:
-  build:
+  web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -12,9 +12,24 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-      # Note: this would only work if Cargo is included in the Nix shell
       - name: build
         run: |
           nix-build ./web/default.nix
+
+  display:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: build glibc
+        run: |
           nix-build ./display/nix/default.nix
+
+      - name: build musl
+        run: |
           nix-build ./display/nix/musl.nix
