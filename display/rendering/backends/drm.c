@@ -4,11 +4,10 @@
 #include <assert.h>
 #include <dirent.h>
 #include <drm.h>
-#include <drm/drm.h>
+#include <drm_fourcc.h>
 #include <drm_mode.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <libdrm/drm_fourcc.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
