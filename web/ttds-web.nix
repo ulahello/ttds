@@ -1,5 +1,7 @@
 { mkDerivation, base, base64, bytestring, http-types, lib, process
 , scotty_0_22, scrypt, text, containers, stm, uuid
+
+, cabal-install, curl, zstd
 }:
 mkDerivation {
   pname = "ttds-web";
@@ -10,6 +12,9 @@ mkDerivation {
   executableHaskellDepends = [
     base base64 bytestring http-types process scotty_0_22 scrypt text containers stm uuid
   ];
+
+  buildTools = [ curl cabal-install ];
+
   license = lib.licenses.mpl20;
   mainProgram = "ttds-web";
 }
