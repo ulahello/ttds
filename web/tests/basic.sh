@@ -17,7 +17,7 @@ function expect_eq() {
 
 TMP="$(mktemp -d)"
 
-cabal run "$SRC/tests/genPass.hs" "$PASS" > "$TMP/admin.pass"
+cabal run "$SRC/tests/genPass.hs" "$PASS" | grep '|' > "$TMP/admin.pass"
 cat "$TMP/admin.pass"
 
 cabal install --project-dir="$SRC" --installdir="$TMP"
