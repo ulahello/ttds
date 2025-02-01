@@ -19,6 +19,13 @@ struct rendering_vtable {
 	/// Initialize a canvas, appropriate for use with the backend.
 	/// Returns null if allocation fails.
 	struct canvas *(*canvas_init)(void *r_ctx);
+
+	// TODO: messy overlap between threads and rendering, perhaps a
+	// different directory structure?
+	/// This thread handles input, whatever that means for the specific
+	/// backend. For implementors, the thread must call `term_block` before
+	/// it returns. The return value is unused.
+	void *(*input_thread)(void *unused);
 };
 
 enum backend {
