@@ -10,6 +10,18 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#define DEFN_RENDER(type, body)                                               \
+	void rendering_draw_##type(struct canvas *c, const struct type *type) \
+	{                                                                     \
+		body                                                          \
+	}                                                                     \
+                                                                              \
+	void rendering_draw_##type##_type_erased(                             \
+	    struct canvas *c, const void *v)                                  \
+	{                                                                     \
+		rendering_draw_##type(c, v);                                  \
+	}
+
 static void draw_point(struct canvas *, int32_t x, int32_t y, struct color);
 
 struct canvas *canvas_init_bgra(uint16_t width, uint16_t height)
@@ -50,22 +62,22 @@ void rendering_fill(struct canvas *c, struct color color)
 			draw_point(c, x, y, color);
 }
 
-void rendering_draw_rect(
-    struct canvas *c, const struct rect *rect, struct color color)
-{
+DEFN_RENDER(rect, {
+	printf("%d, %d, %d\n", rect->c.r, rect->c.g, rect->c.b);
+
 	uint16_t right_edge = rect->x + rect->w;
 	uint16_t bottom_edge = rect->y + rect->h;
 	for (uint16_t y = rect->y; y < bottom_edge && y < c->height; y++)
 		for (uint16_t x = rect->x; x < right_edge && x < c->width; x++)
-			draw_point(c, x, y, color);
-}
+			draw_point(c, x, y, rect->c);
+})
 
-void rendering_draw_circle(
-    struct canvas *c, const struct circle *circle, struct color color)
-{
+DEFN_RENDER(circle, {
 	uint16_t x = circle->r;
 	uint16_t y = 0;
 	int32_t t1 = circle->r / 16;
+
+	const struct color color = circle->c;
 
 	while (x > 0 && x >= y) {
 		int32_t eff_y = circle->y + y;
@@ -108,7 +120,7 @@ void rendering_draw_circle(
 			x--;
 		}
 	}
-}
+})
 
 void rendering_dump_bgra_to_rgba(
     const struct canvas *c, DIR *dir, const char *dirpath, const char *path)
