@@ -100,7 +100,7 @@ struct ui_ctx *ui_ctx_new(struct rendering_vtable vt)
 	}
 
 	ctx->sync_fd_rx = sync_fds[0];
-	ctx->sync_fd_rx = sync_fds[1];
+	ctx->sync_fd_tx = sync_fds[1];
 
 	return ctx;
 }
