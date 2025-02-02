@@ -264,12 +264,9 @@ static char *eat_whitespace(char *x)
 static char **collect_args(char **cursor, size_t *argc, char **argv)
 {
 	char *input = eat_whitespace(*cursor);
-	if (*input == '\0') {
-		*cursor = input;
-		return argv;
-	} else if (*input == ';') {
+	if (*input == '\0' || *input == ';') {
 		*input = '\0';
-		*cursor = input + 1;
+		*cursor = input;
 		return argv;
 	}
 
@@ -287,13 +284,15 @@ static char **collect_args(char **cursor, size_t *argc, char **argv)
 	argv[*argc - 1] = input;
 
 	if (*input_end == '\0') {
+		*cursor = input_end;
 		return argv;
 	} else if (*input_end == ';') {
-		*cursor = &input_end[1];
+		*input_end = '\0';
+		*cursor = input_end + 1;
 		return argv;
 	} else {
 		*input_end = '\0';
-		*cursor = &input_end[1];
+		*cursor = input_end + 1;
 		return collect_args(cursor, argc, argv);
 	}
 }
@@ -326,9 +325,15 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 	struct color color;
 	struct rect rect;
 
-	if (!parse_args("ciiii", argc, argv, &color, &rect.x, &rect.y, &rect.w,
-		&rect.h))
+	size_t x, y, w, h;
+
+	if (!parse_args("ciiii", argc, argv, &color, &x, &y, &w, &h))
 		return;
+
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h;
 
 	enum ui_failure r = ui_pane_draw_rect(ctx, target, &rect, color);
 	if (r != UI_OK) {
@@ -343,9 +348,14 @@ static void act_circle(
 	struct color color;
 	struct circle circle;
 
-	if (!parse_args(
-		"ciii", argc, argv, &color, &circle.x, &circle.y, &circle.r))
+	size_t x, y, rad;
+
+	if (!parse_args("ciii", argc, argv, &color, &x, &y, &rad))
 		return;
+
+	circle.x = x;
+	circle.y = y;
+	circle.r = rad;
 
 	enum ui_failure r = ui_pane_draw_circle(ctx, target, &circle, color);
 
@@ -408,7 +418,8 @@ static bool parse_args(const char *fmt, size_t argc, char **argv, ...)
 		case 'i':
 			size_t *out = va_arg(args, size_t *);
 			char *end = NULL;
-			*out = strtol(argv[i], &end, 0);
+			long iout = strtol(in, &end, 0);
+			*out = iout;
 			if (*end != '\0') {
 				printf(
 				    "failure: expected number, got: %s\n", in);
