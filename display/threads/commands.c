@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <poll.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -375,7 +376,7 @@ static void act_circle(
 
 static void act_term(struct ui_ctx *, char *, size_t, char **)
 {
-	term();
+	kill(getpid(), SIGINT);
 }
 
 static bool parse_color(const char *in, struct color *out)

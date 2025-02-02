@@ -124,7 +124,7 @@ void *ui_thread(void *arg)
 
 	pthread_join(pane_handle, NULL);
 
-	fprintf(stderr, "rendering: terminating\n");
+	fprintf(stderr, "ui: terminating\n");
 
 	if (pthread_mutex_lock(&ctx->panes.lock) != 0)
 		FATAL_ERR("Failed to lock panes.");
