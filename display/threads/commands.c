@@ -435,6 +435,10 @@ static bool parse_args(const char *fmt, size_t argc, char **argv, ...)
 				return false;
 			}
 			break;
+		case 's':
+			char **sout = va_arg(args, char **);
+			*sout = in;
+			break;
 		default:
 			// Violently explode in lieu of proper compile-time type
 			// checks.
