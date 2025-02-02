@@ -181,7 +181,7 @@ static void *rotate_panes(void *arg)
 		clock_gettime(CLOCK_MONOTONIC_RAW, &a); // TODO: error checking
 
 		// Do a cancellable 1-second sleep.
-		poll(fds, 1, sleep_time);
+		poll(fds, sizeof(fds) / sizeof(*fds), sleep_time);
 		if (fds[0].revents &= POLLIN) {
 			// cancellation fd
 			break;
