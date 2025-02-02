@@ -186,7 +186,13 @@ static void *rotate_panes(void *arg)
 			// cancellation fd
 			break;
 		} else if (fds[1].revents &= POLLIN) {
-			// sync fd
+			char buf[1];
+			if (read(fds[1].fd, buf, 1) != 1) {
+				fprintf(stderr,
+				    "ui: rotate_panes: couldn't read from sync_fd.");
+				continue;
+			}
+
 			clock_gettime(CLOCK_MONOTONIC_RAW, &b);
 			int delta = (b.tv_nsec / 1000 / 1000) -
 			    (a.tv_nsec / 1000 / 1000);
