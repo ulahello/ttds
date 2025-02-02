@@ -16,7 +16,7 @@ struct rendering_vtable {
 	/// Give the backend a canvas to display.
 	void (*rendering_show)(void *r_ctx, struct canvas *);
 
-	/// Initialize a canvas, appropriate for use with the backend.
+	/// Construct a canvas with parameters matching the backend.
 	/// Returns null if allocation fails.
 	struct canvas *(*canvas_init)(void *r_ctx);
 
