@@ -1,10 +1,12 @@
 #include "../abort.h"
+#include "rendering/canvas.h"
 #include "termination.h"
 #include "ui.h"
 
 #include <ctype.h>
 #include <poll.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -37,11 +39,20 @@ struct cmd_ctx {
 	int cancellation_fd;
 };
 
+struct action_container {
+	char *name;
+	act_t hook;
+};
+
 static void *cmd_inner(void *arg);
 static char *find_target(char **);
 static bool parse(char **input_cursor, struct parse_result *result);
-static bool find_cmd(const char *);
+
+static bool call_action(struct ui_ctx *ctx, const struct command *c,
+    const struct action_container *, size_t len);
+
 static char *run(struct ui_ctx *, const struct command *);
+
 static char *eat_whitespace(char *);
 static char **collect_args(char **, size_t *, char **);
 
@@ -50,26 +61,20 @@ static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
 
-static void cmd_term(void);
+static void act_term(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
 static bool parse_args(const char *fmt, size_t argc, char **argv, ...);
 
-static struct {
-	char *name;
-	act_t hook;
-} actions[] = {
+static const struct action_container actions[] = {
 	{ "CREATE", act_create },
 	{ "REMOVE", act_remove },
 	{ "RECT", act_rect },
 	{ "CIRCLE", act_circle },
 };
 
-static struct {
-	char *name;
-	cmd_t hook;
-} commands[] = {
-	{ "TERMINATE", cmd_term },
+static const struct action_container root_actions[] = {
+	{ "TERMINATE", act_term },
 };
 
 void *cmd_thread(void *arg)
@@ -134,9 +139,6 @@ static void *cmd_inner(void *arg)
 		size_t len = strlen(line);
 		if (len >= 1)
 			line[len - 1] = '\0';
-
-		if (find_cmd(line))
-			continue;
 
 		char *line_cursor = line;
 		char *target = find_target(&line_cursor);
@@ -225,11 +227,17 @@ static bool parse(char **input_cursor, struct parse_result *result)
 	return result;
 }
 
-static bool find_cmd(const char *line)
+static bool call_action(struct ui_ctx *ctx, const struct command *c,
+    const struct action_container *candidates, size_t len)
 {
-	for (size_t i = 0; i < sizeof(commands) / sizeof(*commands); i++) {
-		if (strcmp(line, commands[i].name) == 0) {
-			commands[i].hook();
+	for (size_t i = 0; i < len; i++) {
+		if (strcmp(c->action, candidates[i].name) == 0) {
+			candidates[i].hook(
+			    ctx, c->target_name, c->argc, c->argv);
+
+			if (c->argv)
+				free(c->argv);
+
 			return true;
 		}
 	}
@@ -239,14 +247,14 @@ static bool find_cmd(const char *line)
 
 static char *run(struct ui_ctx *ctx, const struct command *c)
 {
-	for (size_t i = 0; i < sizeof(actions) / sizeof(*actions); i++) {
-		if (strcmp(c->action, actions[i].name) == 0) {
-			actions[i].hook(ctx, c->target_name, c->argc, c->argv);
-			if (c->argv)
-				free(c->argv);
+	if (strcmp(c->target_name, "root") == 0) {
+		if (call_action(ctx, c, root_actions,
+			sizeof(root_actions) / sizeof(*root_actions)))
 			return NULL;
-		}
 	}
+
+	if (call_action(ctx, c, actions, sizeof(actions) / sizeof(*actions)))
+		return NULL;
 
 	char *err_buf = malloc(512);
 	snprintf(err_buf, 512, "no such action found: %s", c->action);
@@ -322,12 +330,11 @@ static void act_remove(
 
 static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	struct color color;
 	struct rect rect;
 
 	size_t x, y, w, h;
 
-	if (!parse_args("ciiii", argc, argv, &color, &x, &y, &w, &h))
+	if (!parse_args("ciiii", argc, argv, &rect.c, &x, &y, &w, &h))
 		return;
 
 	rect.x = x;
@@ -335,9 +342,11 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 	rect.w = w;
 	rect.h = h;
 
-	enum ui_failure r = ui_pane_draw_rect(ctx, target, &rect, color);
+	enum ui_failure r = ui_pane_draw_shape(
+	    ctx, target, &rect, rendering_draw_rect_type_erased);
+
 	if (r != UI_OK) {
-		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
+		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
 		return;
 	}
 }
@@ -345,29 +354,29 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 static void act_circle(
     struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
-	struct color color;
 	struct circle circle;
 
 	size_t x, y, rad;
 
-	if (!parse_args("ciii", argc, argv, &color, &x, &y, &rad))
+	if (!parse_args("ciii", argc, argv, &circle.c, &x, &y, &rad))
 		return;
 
 	circle.x = x;
 	circle.y = y;
 	circle.r = rad;
 
-	enum ui_failure r = ui_pane_draw_circle(ctx, target, &circle, color);
+	enum ui_failure r = ui_pane_draw_shape(
+	    ctx, target, &circle, rendering_draw_circle_type_erased);
 
 	if (r != UI_OK) {
-		printf("failure: ui_pane_draw_rect: %s\n", ui_failure_str(r));
+		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
 		return;
 	}
 }
 
-static void cmd_term(void)
+static void act_term(struct ui_ctx *, char *, size_t, char **)
 {
-	term();
+	kill(getpid(), SIGINT);
 }
 
 static bool parse_color(const char *in, struct color *out)

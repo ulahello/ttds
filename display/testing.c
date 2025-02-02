@@ -120,8 +120,10 @@ static void test_rects(struct canvas *c)
 		uint16_t size = 2;
 		uint16_t x = x0 + glider[i][0] * size;
 		uint16_t y = y0 + glider[i][1] * size;
-		struct rect rect = { .w = size, .h = size, .x = x, .y = y };
-		rendering_draw_rect(c, &rect, FG);
+		struct rect rect = {
+			.w = size, .h = size, .x = x, .y = y, .c = FG
+		};
+		rendering_draw_rect(c, &rect);
 	}
 
 	// Draw some rectangles.
@@ -130,18 +132,21 @@ static void test_rects(struct canvas *c)
 		{ .x = c->width / 5,
 		    .y = c->height * 2 / 3,
 		    .w = c->width / 3,
-		    .h = c->height / 4 },
+		    .h = c->height / 4,
+		    .c = FG },
 		{ .x = c->width / 4,
 		    .y = c->height / 3,
 		    .w = c->width / 7,
-		    .h = 1 },
+		    .h = 1,
+		    .c = FG },
 		{ .x = c->width / 2,
 		    .y = c->height * 2 / 7,
 		    .w = c->width / 9,
-		    .h = c->height / 6 },
+		    .h = c->height / 6,
+		    .c = FG },
 	};
 	for (size_t i = 0; i < sizeof(rects) / sizeof(*rects); i++) {
-		rendering_draw_rect(c, &rects[i], FG);
+		rendering_draw_rect(c, &rects[i]);
 	}
 }
 
@@ -150,7 +155,7 @@ static void test_circles(struct canvas *c)
 	const double gr = (sqrt(5.) - 1.) / 2.;
 
 	// No-op.
-	rendering_draw_circle(c, &(struct circle) { 0 }, BG);
+	rendering_draw_circle(c, &(struct circle) { 0 });
 
 	// Draw some circles imitating a sunflower!
 	const size_t rmax = 3;
@@ -166,8 +171,12 @@ static void test_circles(struct canvas *c)
 		double x = (1. + px) * ((double)c->width / 2. - rmax) + rmax;
 		double y = (1. + py) * ((double)c->height / 2. - rmax) + rmax;
 		struct circle circle = {
-			.x = round(x), .y = round(y), .r = round(1. + rmax * p)
+			.x = round(x),
+			.y = round(y),
+			.r = round(1. + rmax * p),
+			.c = FG,
 		};
-		rendering_draw_circle(c, &circle, FG);
+
+		rendering_draw_circle(c, &circle);
 	}
 }

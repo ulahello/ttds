@@ -16,6 +16,8 @@ enum ui_failure {
 	UI_TOO_MANY_PANES,
 };
 
+typedef void (*render_fn_t)(struct canvas *, const void *);
+
 char *ui_failure_str(enum ui_failure);
 
 /* Flush an update to a pane. */
@@ -27,8 +29,5 @@ enum ui_failure ui_pane_create(
 
 enum ui_failure ui_pane_remove(struct ui_ctx *ctx, char *name);
 
-enum ui_failure ui_pane_draw_rect(
-    struct ui_ctx *ctx, char *name, const struct rect *, struct color);
-
-enum ui_failure ui_pane_draw_circle(
-    struct ui_ctx *ctx, char *name, const struct circle *, struct color);
+enum ui_failure ui_pane_draw_shape(
+    struct ui_ctx *ctx, char *name, const void *shape, render_fn_t inner);

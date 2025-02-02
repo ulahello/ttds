@@ -11,11 +11,12 @@ struct color {
 
 struct rect {
 	uint16_t x, y, w, h;
+	struct color c;
 };
 
 struct circle {
-	uint16_t x, y;
-	uint16_t r;
+	uint16_t x, y, r;
+	struct color c;
 };
 
 struct canvas {
@@ -30,10 +31,12 @@ void canvas_deinit(struct canvas *);
 
 void rendering_fill(struct canvas *, struct color);
 
-void rendering_draw_rect(struct canvas *, const struct rect *, struct color);
+#define DECL_RENDERING_FNS(type)                                          \
+	void rendering_draw_##type(struct canvas *, const struct type *); \
+	void rendering_draw_##type##_type_erased(struct canvas *, const void *);
 
-void rendering_draw_circle(
-    struct canvas *, const struct circle *, struct color);
+DECL_RENDERING_FNS(rect)
+DECL_RENDERING_FNS(circle)
 
 void rendering_dump_bgra_to_rgba(
     const struct canvas *c, DIR *dir, const char *dirpath, const char *path);
