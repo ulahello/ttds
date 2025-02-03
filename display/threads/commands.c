@@ -142,6 +142,10 @@ static void *cmd_inner(void *arg)
 		if (len >= 1)
 			line[len - 1] = '\0';
 
+		// Ignore blank lines.
+		if (!strlen(line))
+			continue;
+
 		char *line_cursor = line;
 		char *target = find_target(&line_cursor);
 		if (!target) {
