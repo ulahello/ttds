@@ -47,6 +47,7 @@ struct action_container {
 static void *cmd_inner(void *arg);
 static char *find_target(char **);
 static bool parse(char **input_cursor, struct parse_result *result);
+static bool cmd_should_ignore(char *);
 
 static bool call_action(struct ui_ctx *ctx, const struct command *c,
     const struct action_container *, size_t len);
@@ -149,8 +150,8 @@ static void *cmd_inner(void *arg)
 		if (len >= 1)
 			line[len - 1] = '\0';
 
-		// Ignore blank lines.
-		if (!strlen(line))
+		// Ignore blank lines, comments, etc.
+		if (cmd_should_ignore(line))
 			continue;
 
 		char *line_cursor = line;
@@ -238,6 +239,21 @@ static bool parse(char **input_cursor, struct parse_result *result)
 	*input_cursor = arg_start;
 
 	return result;
+}
+
+static bool cmd_should_ignore(char *line)
+{
+	size_t len = strlen(line);
+
+	// Ignore blank lines.
+	if (len == 0)
+		return true;
+
+	// Ignore comments.
+	if (len >= 1 && line[0] == '#')
+		return true;
+
+	return false;
 }
 
 static bool call_action(struct ui_ctx *ctx, const struct command *c,
