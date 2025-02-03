@@ -47,7 +47,7 @@ static void *rotate_panes(void *);
  * This does not perform any synchronization, so if there are other threads
  * accessing the panes, you must lock the mutex first. */
 static struct pane *lookup_pane_thread_unsafe(
-    struct pane_storage, const char *);
+    struct pane_storage *, const char *);
 
 char *ui_failure_strs[] = {
 	[UI_OK] = "no failure",
@@ -214,10 +214,10 @@ static void *rotate_panes(void *arg)
 }
 
 static struct pane *lookup_pane_thread_unsafe(
-    struct pane_storage panes, const char *name)
+    struct pane_storage *panes, const char *name)
 {
-	for (size_t i = 0; i < panes.count; i++) {
-		struct pane *p = &panes.panes[i];
+	for (size_t i = 0; i < panes->count; i++) {
+		struct pane *p = &panes->panes[i];
 		if (strcmp(p->name, name) == 0)
 			return p;
 	}
@@ -233,7 +233,7 @@ enum ui_failure ui_pane_create(
 	pthread_mutex_lock(&ctx->panes.lock);
 
 	size_t idx = ctx->panes.count;
-	if (lookup_pane_thread_unsafe(ctx->panes, name)) {
+	if (lookup_pane_thread_unsafe(&ctx->panes, name)) {
 		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_DUPLICATE;
 	}
@@ -310,7 +310,7 @@ enum ui_failure ui_pane_draw_shape(
 		FATAL_ERR(
 		    "ui_pane_draw_rect: failed to lock: %s\n", strerror(r));
 
-	struct pane *p = lookup_pane_thread_unsafe(ctx->panes, name);
+	struct pane *p = lookup_pane_thread_unsafe(&ctx->panes, name);
 	if (!p) {
 		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_NO_SUCH_PANE;
