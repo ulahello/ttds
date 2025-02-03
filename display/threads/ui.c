@@ -23,8 +23,6 @@ struct pane {
 	struct canvas *canvas;
 };
 
-static void *rotate_panes(void *);
-
 struct pane_storage {
 	size_t count;
 	pthread_mutex_t lock;
@@ -42,6 +40,14 @@ struct ui_ctx {
 	int sync_fd_rx;
 	int sync_fd_tx;
 };
+
+static void *rotate_panes(void *);
+
+/* Search for a pane with the given name, or null if none is found.
+ * This does not perform any synchronization, so if there are other threads
+ * accessing the panes, you must lock the mutex first. */
+static struct pane *lookup_pane_thread_unsafe(
+    struct pane_storage, const char *);
 
 char *ui_failure_strs[] = {
 	[UI_OK] = "no failure",
@@ -207,6 +213,17 @@ static void *rotate_panes(void *arg)
 	return NULL;
 }
 
+static struct pane *lookup_pane_thread_unsafe(
+    struct pane_storage panes, const char *name)
+{
+	for (size_t i = 0; i < panes.count; i++) {
+		struct pane *p = &panes.panes[i];
+		if (strcmp(p->name, name) == 0)
+			return p;
+	}
+	return NULL;
+}
+
 /* Create a pane. */
 enum ui_failure ui_pane_create(
     struct ui_ctx *ctx, char *name, struct color fill)
@@ -216,12 +233,9 @@ enum ui_failure ui_pane_create(
 	pthread_mutex_lock(&ctx->panes.lock);
 
 	size_t idx = ctx->panes.count;
-	for (size_t i = 0; i < idx; i++) {
-		struct pane *p = &ctx->panes.panes[i];
-		if (strcmp(p->name, name) == 0) {
-			pthread_mutex_unlock(&ctx->panes.lock);
-			return UI_DUPLICATE;
-		}
+	if (lookup_pane_thread_unsafe(ctx->panes, name)) {
+		pthread_mutex_unlock(&ctx->panes.lock);
+		return UI_DUPLICATE;
 	}
 
 	if (idx >= MAX_PANES) {
@@ -296,13 +310,7 @@ enum ui_failure ui_pane_draw_shape(
 		FATAL_ERR(
 		    "ui_pane_draw_rect: failed to lock: %s\n", strerror(r));
 
-	struct pane *p = NULL;
-	for (size_t i = 0; i < ctx->panes.count; i++) {
-		p = &ctx->panes.panes[i];
-		if (strcmp(p->name, name) == 0)
-			break;
-	}
-
+	struct pane *p = lookup_pane_thread_unsafe(ctx->panes, name);
 	if (!p) {
 		pthread_mutex_unlock(&ctx->panes.lock);
 		return UI_NO_SUCH_PANE;
