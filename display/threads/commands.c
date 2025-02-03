@@ -250,6 +250,7 @@ static bool cmd_should_ignore(char *line)
 		return true;
 
 	// Ignore comments.
+	// TODO: " #" is not a comment
 	if (len >= 1 && line[0] == '#')
 		return true;
 
