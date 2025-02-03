@@ -133,9 +133,16 @@ static void *cmd_inner(void *arg)
 		if (!(fds[1].revents & POLLIN))
 			continue;
 
-		if (!fgets(line, MAX_CMD_LEN, stdin))
-			FATAL_ERR(
-			    "commands: couldn't read from stdin: %s", STR_ERR);
+		if (!fgets(line, MAX_CMD_LEN, stdin)) {
+			// Ignore stdin upon EOF to prevent spinning.
+			if (feof(stdin))
+				fds[1].fd = -1;
+
+			if (ferror(stdin))
+				FATAL_ERR(
+				    "commands: couldn't read from stdin: %s",
+				    STR_ERR);
+		}
 
 		// Trim newline.
 		size_t len = strlen(line);
