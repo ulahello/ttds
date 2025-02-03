@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Auth (register, TokenStore, initTokenStore, verifyToken, verifyAdmin) where
+module Auth (register, unregister, checkAuth, TokenStore, initTokenStore, verifyToken, verifyAdmin) where
 
 import Control.Concurrent.STM (STM, modifyTVar, newTVarIO)
 import Control.Concurrent.STM.TVar (TVar, readTVar)
@@ -12,12 +12,17 @@ import Data.Functor ((<&>))
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
-import Data.UUID (UUID)
+import qualified Data.Text.Lazy as L
+import Data.UUID (UUID, fromText)
 import Data.UUID.V4 (nextRandom)
 
 data BadPassfileException = WrongSpec | CantDecode deriving (Show)
 
+data RequestException = BadTokenException deriving (Show)
+
 instance Exception BadPassfileException
+
+instance Exception RequestException
 
 type Token = UUID
 
@@ -43,6 +48,24 @@ initTokenStore =
     getCreds file = parse $ lines file
     parse [cred] = return $ pack cred
     parse _ = throwIO WrongSpec
+
+checkAuth :: TokenStore -> Name -> L.Text -> IO Bool
+checkAuth ts name t = case fromText $ L.toStrict t of
+  Just token -> atomically $ checkAuth' token
+  Nothing -> throwIO BadTokenException
+  where
+    checkAuth' :: UUID -> STM Bool
+    checkAuth' uuid = check uuid . tokens <$> readTVar ts
+    check uuid toks = case toks Map.!? name of
+      Just x -> x == uuid -- TODO: should be const time comparison
+      Nothing -> False
+
+unregister :: TokenStore -> Name -> IO ()
+unregister ts name = atomically $ modifyTVar ts unregister'
+  where
+    unregister' (TokenStoreInner {adminCred = admin, tokens = toks}) =
+      let toks' = Map.delete name toks
+       in TokenStoreInner {adminCred = admin, tokens = toks'}
 
 register :: TokenStore -> Name -> IO (Maybe Token)
 register ts name = nextRandom >>= atomically . register'
