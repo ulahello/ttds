@@ -122,7 +122,7 @@ static void *cmd_inner(void *arg)
 	char line[MAX_CMD_LEN];
 
 	for (;;) {
-		if (poll(fds, 2, 0) < 0)
+		if (poll(fds, 2, -1) < 0)
 			FATAL_ERR("commands: poll failed: %s", STR_ERR);
 
 		if (fds[0].revents &= POLLIN)
