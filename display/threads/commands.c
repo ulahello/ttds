@@ -62,6 +62,7 @@ static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static void act_term(struct ui_ctx *, char *target, size_t argc, char **argv);
+static void act_save(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
 static bool parse_args(const char *fmt, size_t argc, char **argv, ...);
@@ -75,6 +76,7 @@ static const struct action_container actions[] = {
 
 static const struct action_container root_actions[] = {
 	{ "TERMINATE", act_term },
+	{ "SAVE", act_save },
 };
 
 void *cmd_thread(void *arg)
@@ -377,6 +379,21 @@ static void act_circle(
 static void act_term(struct ui_ctx *, char *, size_t, char **)
 {
 	kill(getpid(), SIGINT);
+}
+
+static void act_save(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+{
+	(void)target;
+
+	char *name;
+	char *path;
+	if (!parse_args("ss", argc, argv, &name, &path))
+		return;
+
+	enum ui_failure r = ui_pane_save(ctx, name, path);
+	if (r != UI_OK)
+		fprintf(
+		    stderr, "%s: failed: %s\n", __func__, ui_failure_str(r));
 }
 
 static bool parse_color(const char *in, struct color *out)
