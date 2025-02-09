@@ -347,10 +347,8 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &rect, rendering_draw_rect_type_erased);
 
-	if (r != UI_OK) {
+	if (r != UI_OK)
 		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
-		return;
-	}
 }
 
 static void act_circle(
@@ -370,10 +368,8 @@ static void act_circle(
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &circle, rendering_draw_circle_type_erased);
 
-	if (r != UI_OK) {
+	if (r != UI_OK)
 		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
-		return;
-	}
 }
 
 static void act_line(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
@@ -387,10 +383,8 @@ static void act_line(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &line, rendering_draw_line_type_erased);
 
-	if (r != UI_OK) {
+	if (r != UI_OK)
 		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
-		return;
-	}
 }
 
 static void act_term(struct ui_ctx *, char *, size_t, char **)
