@@ -1,4 +1,4 @@
-module Proc (Proc, launch, call) where
+module Proc (Proc, launch, call, Command, mkCommand) where
 
 import Control.Concurrent.MVar (MVar, newMVar, withMVar)
 import Control.Exception (Exception)
@@ -17,8 +17,19 @@ data ProcFailureException = CantGatherProc | NeedCmd deriving (Show)
 
 instance Exception ProcFailureException
 
-call :: Proc -> String -> IO String
-call lock line =
+newtype Command = Command String
+
+mkCommand :: String -> Command
+mkCommand = Command . validate
+  where
+    validate :: String -> String
+    validate ('\n' : xs) = validate xs
+    validate (';' : xs) = validate xs
+    validate (x : xs) = x : validate xs
+    validate [] = []
+
+call :: Proc -> Command -> IO String
+call lock (Command line) =
   withMVar lock $ \proc ->
     let stdin = getStdin proc
         stdout = getStdout proc
