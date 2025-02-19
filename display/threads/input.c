@@ -368,9 +368,6 @@ static void gather_fds(struct eloop_ctx *ctx)
 		target->revents = 0;
 	}
 
-	if (ctx->numfds < 1)
-		FATAL_ERR("Couldn't open any inputs.");
-
 	ctx->fds[ctx->numfds].fd = ctx->cancellation_fd;
 	ctx->fds[ctx->numfds].events = POLLIN;
 	ctx->fds[ctx->numfds].revents = 0;
