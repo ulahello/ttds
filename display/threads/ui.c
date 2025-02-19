@@ -86,9 +86,9 @@ struct ui_ctx *ui_ctx_new(struct rendering_vtable vt)
 		FATAL_ERR("ui: ctx_new: pane creation OOM");
 
 	struct color bg = {
-		.r = 0x22,
+		.r = 0x3A,
 		.g = 0x22,
-		.b = 0x88,
+		.b = 0xBD,
 	};
 
 	rendering_fill(ctx->panes.panes[0].canvas, bg);
