@@ -379,9 +379,15 @@ static void act_line(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
 	struct line line;
 
-	if (!parse_args("ciiii", argc, argv, &line.c, &line.x0, &line.y0,
-		&line.x1, &line.y1))
+	size_t x0, y0, x1, y1;
+
+	if (!parse_args("ciiii", argc, argv, &line.c, &x0, &y0, &x1, &y1))
 		return;
+
+	line.x0 = x0;
+	line.y0 = y0;
+	line.x1 = x1;
+	line.y1 = y1;
 
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &line, rendering_draw_line_type_erased);
@@ -395,9 +401,16 @@ static void act_copy_rect(
 {
 	struct rect_copy rc;
 
-	if (!parse_args("iiiiii", argc, argv, &rc.dst_x, &rc.dst_y, &rc.src_x,
-		&rc.src_y, &rc.w, &rc.h))
+	size_t dst_x, dst_y, src_x, src_y, w, h;
+	if (!parse_args("iiiiii", argc, argv, &dst_x, &dst_y, &src_x, &src_y, &w, &h))
 		return;
+
+	rc.dst_x = dst_x;
+	rc.dst_y = dst_y;
+	rc.src_x = src_x;
+	rc.src_y = src_y;
+	rc.w = w;
+	rc.h = h;
 
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &rc, rendering_draw_rect_copy_type_erased);
