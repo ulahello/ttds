@@ -87,9 +87,9 @@ struct ui_ctx *ui_ctx_new(struct rendering_vtable vt)
 		FATAL_ERR("ui: ctx_new: pane creation OOM");
 
 	struct color bg = {
-		.r = 0x22,
+		.r = 0x3A,
 		.g = 0x22,
-		.b = 0x88,
+		.b = 0xBD,
 	};
 
 	rendering_fill(ctx->panes.panes[0].canvas, bg);
@@ -309,7 +309,7 @@ enum ui_failure ui_pane_draw_shape(
 	r = pthread_mutex_lock(&ctx->panes.lock);
 	if (r != 0)
 		FATAL_ERR(
-		    "ui_pane_draw_rect: failed to lock: %s\n", strerror(r));
+		    "ui_pane_draw_shape: failed to lock: %s\n", strerror(r));
 
 	struct pane *p = lookup_pane_thread_unsafe(&ctx->panes, name);
 	if (!p) {

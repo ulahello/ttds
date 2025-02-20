@@ -61,6 +61,9 @@ static void act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
+static void act_line(struct ui_ctx *, char *target, size_t argc, char **argv);
+static void act_copy_rect(
+    struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static void act_term(struct ui_ctx *, char *target, size_t argc, char **argv);
 static void act_save(struct ui_ctx *, char *target, size_t argc, char **argv);
@@ -73,6 +76,8 @@ static const struct action_container actions[] = {
 	{ "REMOVE", act_remove },
 	{ "RECT", act_rect },
 	{ "CIRCLE", act_circle },
+	{ "LINE", act_line },
+	{ "COPY_RECT", act_copy_rect },
 };
 
 static const struct action_container root_actions[] = {
@@ -125,7 +130,7 @@ static void *cmd_inner(void *arg)
 	char line[MAX_CMD_LEN];
 
 	for (;;) {
-		if (poll(fds, 2, 0) < 0)
+		if (poll(fds, 2, -1) < 0)
 			FATAL_ERR("commands: poll failed: %s", STR_ERR);
 
 		if (fds[0].revents &= POLLIN)
@@ -375,10 +380,8 @@ static void act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &rect, rendering_draw_rect_type_erased);
 
-	if (r != UI_OK) {
+	if (r != UI_OK)
 		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
-		return;
-	}
 }
 
 static void act_circle(
@@ -398,10 +401,52 @@ static void act_circle(
 	enum ui_failure r = ui_pane_draw_shape(
 	    ctx, target, &circle, rendering_draw_circle_type_erased);
 
-	if (r != UI_OK) {
+	if (r != UI_OK)
 		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
+}
+
+static void act_line(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+{
+	struct line line;
+
+	size_t x0, y0, x1, y1;
+
+	if (!parse_args("ciiii", argc, argv, &line.c, &x0, &y0, &x1, &y1))
 		return;
-	}
+
+	line.x0 = x0;
+	line.y0 = y0;
+	line.x1 = x1;
+	line.y1 = y1;
+
+	enum ui_failure r = ui_pane_draw_shape(
+	    ctx, target, &line, rendering_draw_line_type_erased);
+
+	if (r != UI_OK)
+		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
+}
+
+static void act_copy_rect(
+    struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+{
+	struct rect_copy rc;
+
+	size_t dst_x, dst_y, src_x, src_y, w, h;
+	if (!parse_args("iiiiii", argc, argv, &dst_x, &dst_y, &src_x, &src_y, &w, &h))
+		return;
+
+	rc.dst_x = dst_x;
+	rc.dst_y = dst_y;
+	rc.src_x = src_x;
+	rc.src_y = src_y;
+	rc.w = w;
+	rc.h = h;
+
+	enum ui_failure r = ui_pane_draw_shape(
+	    ctx, target, &rc, rendering_draw_rect_copy_type_erased);
+
+	if (r != UI_OK)
+		printf("failure: ui_pane_draw_shape: %s\n", ui_failure_str(r));
 }
 
 static void act_term(struct ui_ctx *, char *, size_t, char **)

@@ -14,8 +14,20 @@ struct rect {
 	struct color c;
 };
 
+struct rect_copy {
+	uint16_t dst_x, dst_y;
+	uint16_t src_x, src_y;
+	uint16_t w, h;
+};
+
 struct circle {
 	uint16_t x, y, r;
+	struct color c;
+};
+
+struct line {
+	uint16_t x0, y0;
+	uint16_t x1, y1;
 	struct color c;
 };
 
@@ -37,6 +49,8 @@ void rendering_fill(struct canvas *, struct color);
 
 DECL_RENDERING_FNS(rect)
 DECL_RENDERING_FNS(circle)
+DECL_RENDERING_FNS(line)
+DECL_RENDERING_FNS(rect_copy)
 
 void rendering_dump_bgra_to_rgba(
     const struct canvas *c, DIR *dir, const char *dirpath, const char *path);

@@ -11,7 +11,7 @@ import Data.Text.Lazy (pack, toStrict)
 import Data.UUID (toText)
 import GHC.Conc (atomically)
 import Network.HTTP.Types.Status (badRequest400, unauthorized401)
-import Proc (Proc, call, launch)
+import Proc (Proc, call, launch, mkCommand)
 import System.Environment (getArgs)
 import Web.Scotty (ActionM, delete, finish, header, notFound, pathParam, post, scotty, status, text)
 
@@ -23,8 +23,11 @@ main = getArgs >>= launch >>= runWithProc
 runWebServer :: Proc -> TokenStore -> IO ()
 runWebServer proc ts =
   scotty 8080 $ do
-    post "/raw/:text" $ requireAdmin ts >> pathParam "text" >>= routeRaw
-    post "/pane/:pane/create" $ pathParam "pane" >>= registerPane >>= callCreate
+    post "/raw/:text" $ requireAdmin ts >> pathParam "text" >>= routeRaw . mkCommand
+    post "/pane/:pane/create" $ do
+      pane <- pathParam "pane"
+      name <- registerPane pane
+      callCreate name
 
     delete "/pane/:pane" $
       pathParam "pane" >>= checkAuthScotty >>= \pane ->
@@ -48,14 +51,11 @@ runWebServer proc ts =
         serve True = return name
         serve False = status unauthorized401 >> finish
 
-    -- TODO: validation. if name contains a newline, there's a potential for
-    -- unauthenticated command injection.
-    --
     -- Also, we're missing a background color here.
-    callCreate name = void $ liftIO $ callAct $ unpack name ++ ": CREATE"
+    callCreate name = callStr $ unpack name ++ ": CREATE"
+    callDelete name = callStr $ unpack name ++ ": DELETE"
 
-    -- TODO: MORE VALIDATON. We should newtype the things that are safe to pass into callAct.
-    callDelete name = void $ liftIO . callAct $ unpack name ++ ": DELETE"
+    callStr = void . liftIO . callAct . mkCommand
 
 requireAdmin :: TokenStore -> ActionM ()
 requireAdmin ts = header "Auth" >>= isOk >>= verify

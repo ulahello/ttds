@@ -8,6 +8,7 @@ libsystemd = dependency('libsystemd')
 add_project_arguments([
   '-pedantic', '-D_POSIX_C_SOURCE=200809L',
   '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=1',
+  '-Wno-gnu-zero-variadic-macro-arguments',
 ], language : 'c')
 
 exe = executable('ttds',

@@ -13,7 +13,7 @@
 stdenv.mkDerivation {
   pname = "ttds-display-testing";
   version = "0.1.0";
-  src = ../.;
+  src = builtins.filterSource (path: type: type != "directory" || baseNameOf path != "build") ../.;
 
   mesonFlags = [ "--buildtype=debugoptimized" ] ++ lib.optional sanitize [ "-Db_sanitize=address" ];
 
