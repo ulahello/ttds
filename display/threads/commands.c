@@ -141,8 +141,10 @@ static void *cmd_inner(void *arg)
 
 		if (!fgets(line, MAX_CMD_LEN, stdin)) {
 			// Ignore stdin upon EOF to prevent spinning.
-			if (feof(stdin))
+			if (feof(stdin)) {
 				fds[1].fd = -1;
+				continue;
+			}
 
 			if (ferror(stdin))
 				FATAL_ERR(
