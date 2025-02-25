@@ -1,16 +1,17 @@
-module Proc (Proc, launch, call, Command, mkCommand) where
+module Proc (Proc, launch, call, kill, Command, mkCommand) where
 
 import Control.Concurrent.MVar (MVar, newMVar, withMVar)
 import Control.Exception (Exception)
 import Control.Exception.Base (throwIO)
 import System.IO (BufferMode (..), Handle, hGetLine, hPutStrLn, hSetBuffering)
-import System.Process (CmdSpec (ShellCommand), CreateProcess (..), ProcessHandle, StdStream (CreatePipe, Inherit), createProcess)
+import System.Process (terminateProcess, CmdSpec (ShellCommand), CreateProcess (..), ProcessHandle, StdStream (CreatePipe, Inherit), createProcess)
 
 type Proc = MVar Process
 
 data Process = Process
   { getStdin :: Handle,
-    getStdout :: Handle
+    getStdout :: Handle,
+    getHandle :: ProcessHandle
   }
 
 data ProcFailureException = CantGatherProc | NeedCmd deriving (Show)
@@ -27,6 +28,9 @@ mkCommand = Command . validate
     validate (';' : xs) = validate xs
     validate (x : xs) = x : validate xs
     validate [] = []
+
+kill :: Proc -> IO ()
+kill lock = withMVar lock $ terminateProcess . getHandle
 
 call :: Proc -> Command -> IO String
 call lock (Command line) =
@@ -59,12 +63,13 @@ launch cmd =
    in createProcess proc >>= gatherProc >>= newMVar
 
 gatherProc :: (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle) -> IO Process
-gatherProc (Just stdin, Just stdout, _, _) =
+gatherProc (Just stdin, Just stdout, _, handle) =
   hSetBuffering stdout NoBuffering
     >> hSetBuffering stdin NoBuffering
     >> return
       Process
         { getStdin = stdin,
-          getStdout = stdout
+          getStdout = stdout,
+          getHandle = handle
         }
 gatherProc _ = throwIO CantGatherProc

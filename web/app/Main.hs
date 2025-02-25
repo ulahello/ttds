@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Main where
 
@@ -11,14 +12,23 @@ import Data.Text.Lazy (pack, toStrict)
 import Data.UUID (toText)
 import GHC.Conc (atomically)
 import Network.HTTP.Types.Status (badRequest400, unauthorized401)
-import Proc (Proc, call, launch, mkCommand)
+import Proc (Proc, call, launch, kill, mkCommand)
 import System.Environment (getArgs)
 import Web.Scotty (ActionM, delete, finish, header, notFound, pathParam, post, scotty, status, text)
+import System.Exit (exitSuccess)
+import System.Posix.Signals (installHandler, sigINT, Handler(..))
+
+foreign import ccall "reallyExit" reallyExit :: IO ()
 
 main :: IO ()
-main = getArgs >>= launch >>= runWithProc
+main = getArgs >>= launch >>= setupAndRun
   where
+    setupAndRun proc = setupTerm proc >> runWithProc proc
     runWithProc proc = initTokenStore >>= runWebServer proc
+
+    setupTerm proc = installHandler sigINT (sigintHandler proc) Nothing
+    sigintHandler proc = Catch $
+      putStrLn "nya" >> kill proc >> reallyExit
 
 runWebServer :: Proc -> TokenStore -> IO ()
 runWebServer proc ts =
