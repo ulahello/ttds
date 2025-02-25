@@ -40,7 +40,7 @@ expect_eq "$RES" "test"
 ###############################
 
 # Let's create a pane.
-EX_TOK="$(curl --fail-with-body -v -X POST "localhost:8080/pane/ex/create")"
+EX_TOK="$(curl --fail-with-body -v -X POST "localhost:8080/pane/ex/create?color=%23000000")"
 
 # Now, let's try to delete it without our token. This should fail.
 curl -v -X DELETE "localhost:8080/pane/ex" 2>&1 | grep 401

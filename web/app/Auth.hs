@@ -58,7 +58,7 @@ checkAuth ts name t = case fromText $ L.toStrict t of
     checkAuth' :: UUID -> STM Bool
     checkAuth' uuid = check uuid . tokens <$> readTVar ts
     check uuid toks = case toks Map.!? name of
-      Just x -> x == uuid -- TODO: should be const time comparison
+      Just x -> x == uuid
       Nothing -> False
 
 unregister :: TokenStore -> Name -> IO ()
