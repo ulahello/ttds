@@ -42,6 +42,16 @@ runWebServer proc ts =
       name <- registerPane pane
       callCreate name color
 
+    post "/pane/:pane/rect" $ do
+      pane <- pathParam "pane"
+      color <- queryParam "color"
+      x <- queryParam "x"
+      y <- queryParam "y"
+      w <- queryParam "w"
+      h <- queryParam "h"
+      checkAuthScotty pane
+      callRect pane color x y w h
+
     delete "/pane/:pane" $
       pathParam "pane" >>= checkAuthScotty >>= \pane ->
         callDelete pane >> liftIO (unregister ts pane)
@@ -66,6 +76,7 @@ runWebServer proc ts =
 
     -- Also, we're missing a background color here.
     callCreate name color = callStr $ unpack name ++ ": CREATE " ++ color
+    callRect name color x y w h = callStr $ unpack name ++ ": RECT " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h
     callDelete name = callStr $ unpack name ++ ": REMOVE"
 
     callStr = void . liftIO . callAct . mkCommand
