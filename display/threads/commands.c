@@ -172,6 +172,7 @@ static void *cmd_inner(void *arg)
 			}
 		}
 
+		printf("OK\n");
 		ui_sync(ctx->ui_ctx);
 	}
 
@@ -402,7 +403,8 @@ static void act_copy_rect(
 	struct rect_copy rc;
 
 	size_t dst_x, dst_y, src_x, src_y, w, h;
-	if (!parse_args("iiiiii", argc, argv, &dst_x, &dst_y, &src_x, &src_y, &w, &h))
+	if (!parse_args(
+		"iiiiii", argc, argv, &dst_x, &dst_y, &src_x, &src_y, &w, &h))
 		return;
 
 	rc.dst_x = dst_x;

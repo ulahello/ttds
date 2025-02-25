@@ -5,7 +5,6 @@
 module Main where
 
 import Auth (TokenStore, checkAuth, initTokenStore, register, unregister, verifyAdmin)
-import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text (unpack)
 import Data.Text.Lazy (pack, toStrict)
@@ -14,7 +13,6 @@ import GHC.Conc (atomically)
 import Network.HTTP.Types.Status (badRequest400, unauthorized401)
 import Proc (Proc, call, kill, launch, mkCommand)
 import System.Environment (getArgs)
-import System.Exit (exitSuccess)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
 import Web.Scotty (ActionM, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
 
@@ -39,8 +37,8 @@ runWebServer proc ts =
       pane <- pathParam "pane"
       color <- queryParam "color"
       liftIO $ putStrLn color
-      name <- registerPane pane
-      callCreate name color
+      callCreate pane color
+      registerPane pane
 
     post "/pane/:pane/rect" $ do
       pane <- pathParam "pane"
@@ -72,7 +70,7 @@ runWebServer proc ts =
 
     registerPane name =
       (liftIO . register ts) name >>= \case
-        Just uuid -> (text . pack . unpack . toText) uuid >> return name
+        Just uuid -> (text . pack . unpack . toText) uuid
         Nothing -> status badRequest400 >> text "couldn't create pane." >> finish
 
     checkAuthScotty name = header "Auth" >>= check >>= serve
@@ -88,7 +86,9 @@ runWebServer proc ts =
     callCircle name color x y r = callStr $ unpack name ++ ": CIRCLE " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ r
     callDelete name = callStr $ unpack name ++ ": REMOVE"
 
-    callStr = void . liftIO . callAct . mkCommand
+    callStr cmd = (liftIO . callAct . mkCommand) cmd >>= \case
+      "OK" -> return ()
+      x -> (text . pack) x >> finish
 
 requireAdmin :: TokenStore -> ActionM ()
 requireAdmin ts = header "Auth" >>= isOk >>= verify
