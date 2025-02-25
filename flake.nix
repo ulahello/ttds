@@ -15,5 +15,14 @@
 
         CC = "clang";
       };
+
+    packages.x86_64-linux.display =
+      let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
+      (import ./display/nix { inherit pkgs; })
+        .override { stdenv = pkgs.clangStdenv; };
+
+    packages.x86_64-linux.web =
+      let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
+      (import ./web { inherit pkgs; });
   };
 }
