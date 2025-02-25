@@ -1,6 +1,7 @@
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Auth (register, unregister, checkAuth, TokenStore, initTokenStore, verifyToken, verifyAdmin) where
+module Auth (register, unregister, checkAuth, TokenStore, initTokenStore, verifyAdmin) where
 
 import Control.Concurrent.STM (STM, modifyTVar, newTVarIO)
 import Control.Concurrent.STM.TVar (TVar, readTVar)
@@ -9,10 +10,10 @@ import Control.Monad.STM (atomically)
 import Crypto.Scrypt (EncryptedPass (..), Pass (..), verifyPass')
 import Data.ByteString.Char8 (pack)
 import Data.Functor ((<&>))
-import qualified Data.Map.Strict as Map
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
-import qualified Data.Text.Lazy as L
+import Data.Text.Lazy qualified as L
 import Data.UUID (UUID, fromText)
 import Data.UUID.V4 (nextRandom)
 
@@ -77,9 +78,6 @@ register ts name = nextRandom >>= atomically . register'
       Nothing -> modifyTVar ts (withTok tok) >> return (Just tok)
 
     withTok tok tsi = TokenStoreInner {adminCred = adminCred tsi, tokens = Map.insert name tok $ tokens tsi}
-
-verifyToken :: TokenStore -> Token -> Name -> STM Bool
-verifyToken _ _ _ = return False
 
 verifyAdmin :: TokenStore -> Text -> STM Bool
 verifyAdmin ts tok = readTVar ts <&> verify

@@ -1,6 +1,6 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ForeignFunctionInterface #-}
 
 module Main where
 
@@ -12,11 +12,11 @@ import Data.Text.Lazy (pack, toStrict)
 import Data.UUID (toText)
 import GHC.Conc (atomically)
 import Network.HTTP.Types.Status (badRequest400, unauthorized401)
-import Proc (Proc, call, launch, kill, mkCommand)
+import Proc (Proc, call, kill, launch, mkCommand)
 import System.Environment (getArgs)
-import Web.Scotty (ActionM, delete, finish, header, notFound, pathParam, post, scotty, status, text)
 import System.Exit (exitSuccess)
-import System.Posix.Signals (installHandler, sigINT, Handler(..))
+import System.Posix.Signals (Handler (..), installHandler, sigINT)
+import Web.Scotty (ActionM, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
 
 foreign import ccall "reallyExit" reallyExit :: IO ()
 
@@ -27,8 +27,9 @@ main = getArgs >>= launch >>= setupAndRun
     runWithProc proc = initTokenStore >>= runWebServer proc
 
     setupTerm proc = installHandler sigINT (sigintHandler proc) Nothing
-    sigintHandler proc = Catch $
-      putStrLn "nya" >> kill proc >> reallyExit
+    sigintHandler proc =
+      Catch $
+        putStrLn "nya" >> kill proc >> reallyExit
 
 runWebServer :: Proc -> TokenStore -> IO ()
 runWebServer proc ts =
@@ -36,8 +37,10 @@ runWebServer proc ts =
     post "/raw/:text" $ requireAdmin ts >> pathParam "text" >>= routeRaw . mkCommand
     post "/pane/:pane/create" $ do
       pane <- pathParam "pane"
+      color <- queryParam "color"
+      liftIO $ putStrLn color
       name <- registerPane pane
-      callCreate name
+      callCreate name color
 
     delete "/pane/:pane" $
       pathParam "pane" >>= checkAuthScotty >>= \pane ->
@@ -62,8 +65,8 @@ runWebServer proc ts =
         serve False = status unauthorized401 >> finish
 
     -- Also, we're missing a background color here.
-    callCreate name = callStr $ unpack name ++ ": CREATE"
-    callDelete name = callStr $ unpack name ++ ": DELETE"
+    callCreate name color = callStr $ unpack name ++ ": CREATE " ++ color
+    callDelete name = callStr $ unpack name ++ ": REMOVE"
 
     callStr = void . liftIO . callAct . mkCommand
 
