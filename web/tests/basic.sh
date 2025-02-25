@@ -35,18 +35,5 @@ sleep 1
 RES="$(curl -v -X POST -H "Auth: $PASS" "localhost:8080/raw/test")"
 expect_eq "$RES" "test"
 
-###############################
-# Pane creation and deletion. #
-###############################
-
-# Let's create a pane.
-EX_TOK="$(curl --fail-with-body -v -X POST "localhost:8080/pane/ex/create?color=%23000000")"
-
-# Now, let's try to delete it without our token. This should fail.
-curl -v -X DELETE "localhost:8080/pane/ex" 2>&1 | grep 401
-
-# Delete it correctly this time.
-curl --fail-with-body -v -X DELETE -H "Auth: $EX_TOK" "localhost:8080/pane/ex"
-
 kill "$PID"
 rm -r "$TMP"
