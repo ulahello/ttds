@@ -52,6 +52,15 @@ runWebServer proc ts =
       checkAuthScotty pane
       callRect pane color x y w h
 
+    post "/pane/:pane/circle" $ do
+      pane <- pathParam "pane"
+      color <- queryParam "color"
+      x <- queryParam "x"
+      y <- queryParam "y"
+      r <- queryParam "r"
+      checkAuthScotty pane
+      callCircle pane color x y r
+
     delete "/pane/:pane" $
       pathParam "pane" >>= checkAuthScotty >>= \pane ->
         callDelete pane >> liftIO (unregister ts pane)
@@ -76,6 +85,7 @@ runWebServer proc ts =
 
     callCreate name color = callStr $ unpack name ++ ": CREATE " ++ color
     callRect name color x y w h = callStr $ unpack name ++ ": RECT " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h
+    callCircle name color x y r = callStr $ unpack name ++ ": CIRCLE " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ r
     callDelete name = callStr $ unpack name ++ ": REMOVE"
 
     callStr = void . liftIO . callAct . mkCommand
