@@ -74,7 +74,6 @@ runWebServer proc ts =
         serve True = return name
         serve False = status unauthorized401 >> finish
 
-    -- Also, we're missing a background color here.
     callCreate name color = callStr $ unpack name ++ ": CREATE " ++ color
     callRect name color x y w h = callStr $ unpack name ++ ": RECT " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h
     callDelete name = callStr $ unpack name ++ ": REMOVE"
