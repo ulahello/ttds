@@ -232,8 +232,7 @@ static void switch_to_tty(struct eloop_ctx *ctx, uint32_t id)
 	}
 
 	if (!sess_id) {
-		// TODO: good logging
-		printf("No such session exists.\n");
+		fprintf(stderr, "No such session exists.\n");
 		goto cleanup;
 	}
 
@@ -262,7 +261,8 @@ static bool scan_poll(struct eloop_ctx *ctx)
 		struct input_event event;
 		int r = read(ctx->fds[i].fd, &event, sizeof(event));
 		if (r < 0) {
-			printf("input: failed to read event: %s\n", STR_ERR);
+			fprintf(stderr, "input: failed to read event: %s\n",
+			    STR_ERR);
 			continue;
 		}
 
@@ -349,8 +349,8 @@ static void gather_fds(struct eloop_ctx *ctx)
 
 		int ev_file_fd = openat(fd, dir->d_name, O_RDONLY);
 		if (ev_file_fd == -1) {
-			printf("Failed to open dev: %s: %s\n", dir->d_name,
-			    STR_ERR);
+			fprintf(stderr, "Failed to open dev: %s: %s\n",
+			    dir->d_name, STR_ERR);
 			continue;
 		}
 
