@@ -10,17 +10,14 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define DEFN_RENDER(type, body)                                               \
-	void rendering_draw_##type(struct canvas *c, const struct type *type) \
-	{                                                                     \
-		body                                                          \
-	}                                                                     \
-                                                                              \
-	void rendering_draw_##type##_type_erased(                             \
-	    struct canvas *c, const void *v)                                  \
-	{                                                                     \
-		rendering_draw_##type(c, v);                                  \
-	}
+// The function body goes after macro invocation.
+#define DEFN_RENDER(type)                         \
+	void rendering_draw_##type##_type_erased( \
+	    struct canvas *c, const void *v)      \
+	{                                         \
+		rendering_draw_##type(c, v);      \
+	}                                         \
+	void rendering_draw_##type(struct canvas *c, const struct type *type)
 
 static inline intmax_t min(intmax_t, intmax_t);
 static inline intmax_t max(intmax_t, intmax_t);
@@ -64,15 +61,15 @@ void rendering_fill(struct canvas *c, struct color color)
 			draw_point(c, x, y, color);
 }
 
-DEFN_RENDER(rect, {
+DEFN_RENDER(rect) {
 	uint16_t right_edge = rect->x + rect->w;
 	uint16_t bottom_edge = rect->y + rect->h;
 	for (uint16_t y = rect->y; y < bottom_edge && y < c->height; y++)
 		for (uint16_t x = rect->x; x < right_edge && x < c->width; x++)
 			draw_point(c, x, y, rect->c);
-})
+}
 
-DEFN_RENDER(circle, {
+DEFN_RENDER(circle) {
 	uint16_t x = circle->r;
 	uint16_t y = 0;
 	int32_t t1 = circle->r / 16;
@@ -120,9 +117,9 @@ DEFN_RENDER(circle, {
 			x--;
 		}
 	}
-})
+}
 
-DEFN_RENDER(line, {
+DEFN_RENDER(line) {
 	const struct color color = line->c;
 
 	// I think this is essentially Bresenham's line algorithm, as in, that
@@ -207,9 +204,9 @@ DEFN_RENDER(line, {
 			d1_y -= steps * lstep_y;
 		}
 	}
-})
+}
 
-DEFN_RENDER(rect_copy, {
+DEFN_RENDER(rect_copy) {
 	const struct rect_copy rc = *rect_copy;
 
 	// The regions may overlap, so we care whether we are incrementing or
@@ -246,7 +243,7 @@ DEFN_RENDER(rect_copy, {
 		memmove(&c->buffer[dst_idx], &c->buffer[src_idx],
 		    (size_t)safe_width * 4);
 	}
-})
+}
 
 void rendering_dump_bgra_to_rgba(
     const struct canvas *c, DIR *dir, const char *dirpath, const char *path)
