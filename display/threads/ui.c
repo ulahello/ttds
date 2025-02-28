@@ -167,7 +167,9 @@ static void *rotate_panes(void *arg)
 
 	int sleep_time = 1000;
 
-	for (size_t i = 0;; i++) {
+	size_t idx_increment = 1;
+
+	for (size_t i = 0;; i += idx_increment) {
 		r = pthread_mutex_lock(&ctx->panes.lock);
 
 		if (r != 0)
@@ -192,6 +194,7 @@ static void *rotate_panes(void *arg)
 			// cancellation fd
 			break;
 		} else if (fds[1].revents &= POLLIN) {
+			idx_increment = 0;
 			char buf[1];
 			if (read(fds[1].fd, buf, 1) != 1) {
 				fprintf(stderr,
@@ -206,6 +209,7 @@ static void *rotate_panes(void *arg)
 			sleep_time -= delta;
 			continue;
 		} else {
+			idx_increment = 1;
 			sleep_time = 1000;
 		}
 	}
