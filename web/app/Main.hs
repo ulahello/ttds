@@ -27,7 +27,7 @@ main = getArgs >>= launch >>= setupAndRun
     setupTerm proc = installHandler sigINT (sigintHandler proc) Nothing
     sigintHandler proc =
       Catch $
-        putStrLn "nya" >> kill proc >> reallyExit
+        putStrLn "Exiting." >> kill proc >> reallyExit
 
 runWebServer :: Proc -> TokenStore -> IO ()
 runWebServer proc ts =
