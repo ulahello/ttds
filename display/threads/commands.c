@@ -17,7 +17,6 @@
 #define MAX_CMD_LEN 1024
 
 typedef void (*act_t)(struct ui_ctx *, char *target, size_t argc, char **argv);
-typedef void (*cmd_t)(void);
 
 struct command {
 	char *target_name;
