@@ -71,7 +71,7 @@ runWebServer proc ts =
     registerPane name =
       (liftIO . register ts) name >>= \case
         Just uuid -> (text . pack . unpack . toText) uuid
-        Nothing -> status badRequest400 >> text "couldn't create pane." >> finish
+        Nothing -> status badRequest400 >> text "Pane with same name exists." >> finish
 
     checkAuthScotty name = header "Auth" >>= check >>= serve
       where
