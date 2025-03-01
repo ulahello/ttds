@@ -55,10 +55,13 @@ static char *run(struct ui_ctx *, const struct command *);
 static char *eat_whitespace(char *);
 static char **collect_args(char **, size_t *, char **);
 
-static char *act_create(struct ui_ctx *, char *target, size_t argc, char **argv);
-static char *act_remove(struct ui_ctx *, char *target, size_t argc, char **argv);
+static char *act_create(
+    struct ui_ctx *, char *target, size_t argc, char **argv);
+static char *act_remove(
+    struct ui_ctx *, char *target, size_t argc, char **argv);
 static char *act_rect(struct ui_ctx *, char *target, size_t argc, char **argv);
-static char *act_circle(struct ui_ctx *, char *target, size_t argc, char **argv);
+static char *act_circle(
+    struct ui_ctx *, char *target, size_t argc, char **argv);
 static char *act_line(struct ui_ctx *, char *target, size_t argc, char **argv);
 static char *act_copy_rect(
     struct ui_ctx *, char *target, size_t argc, char **argv);
@@ -259,7 +262,8 @@ static char *call_action(struct ui_ctx *ctx, const struct command *c,
 		char *ret = malloc(512);
 		snprintf(ret, 512, "no such action found: %s", c->action);
 		return ret;
-	} else return NULL;
+	} else
+		return NULL;
 }
 
 static char *run(struct ui_ctx *ctx, const struct command *c)
@@ -267,11 +271,12 @@ static char *run(struct ui_ctx *ctx, const struct command *c)
 	char *ret = NULL;
 	if (strcmp(c->target_name, "root") == 0) {
 		if ((ret = call_action(ctx, c, root_actions,
-			sizeof(root_actions) / sizeof(*root_actions), false)))
+			 sizeof(root_actions) / sizeof(*root_actions), false)))
 			return ret;
 	}
 
-	ret = call_action(ctx, c, actions, sizeof(actions) / sizeof(*actions), true);
+	ret = call_action(
+	    ctx, c, actions, sizeof(actions) / sizeof(*actions), true);
 	return ret;
 }
 
@@ -330,7 +335,8 @@ static char *act_create(
 	enum ui_failure r = ui_pane_create(ctx, target, fill);
 	if (r != UI_OK) {
 		err_buf = malloc(1024);
-		snprintf(err_buf, 1024, "act_create: failed: %s", ui_failure_str(r));
+		snprintf(
+		    err_buf, 1024, "act_create: failed: %s", ui_failure_str(r));
 	}
 
 	return err_buf;
@@ -346,20 +352,23 @@ static char *act_remove(
 	enum ui_failure r = ui_pane_remove(ctx, target);
 	if (r != UI_OK) {
 		err_buf = malloc(1024);
-		snprintf(err_buf, 1024, "act_remove: failed: %s", ui_failure_str(r));
+		snprintf(
+		    err_buf, 1024, "act_remove: failed: %s", ui_failure_str(r));
 	}
 
 	return err_buf;
 }
 
-static char *act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+static char *act_rect(
+    struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
 	char *err_buf = NULL;
 	struct rect rect;
 
 	long x, y, w, h;
 
-	if ((err_buf = parse_args("ciiii", argc, argv, &rect.c, &x, &y, &w, &h)))
+	if ((err_buf =
+		    parse_args("ciiii", argc, argv, &rect.c, &x, &y, &w, &h)))
 		return err_buf;
 
 	rect.x = x;
@@ -372,7 +381,8 @@ static char *act_rect(struct ui_ctx *ctx, char *target, size_t argc, char **argv
 
 	if (r != UI_OK) {
 		err_buf = malloc(1024);
-		snprintf(err_buf, 1024, "act_rect: failed: %s", ui_failure_str(r));
+		snprintf(
+		    err_buf, 1024, "act_rect: failed: %s", ui_failure_str(r));
 	}
 
 	return err_buf;
@@ -398,20 +408,23 @@ static char *act_circle(
 
 	if (r != UI_OK) {
 		err_buf = malloc(1024);
-		snprintf(err_buf, 1024, "act_circle: failed: %s", ui_failure_str(r));
+		snprintf(
+		    err_buf, 1024, "act_circle: failed: %s", ui_failure_str(r));
 	}
 
 	return err_buf;
 }
 
-static char *act_line(struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+static char *act_line(
+    struct ui_ctx *ctx, char *target, size_t argc, char **argv)
 {
 	char *err_buf = NULL;
 	struct line line;
 
 	long x0, y0, x1, y1;
 
-	if ((err_buf = parse_args("ciiii", argc, argv, &line.c, &x0, &y0, &x1, &y1)))
+	if ((err_buf = parse_args(
+		 "ciiii", argc, argv, &line.c, &x0, &y0, &x1, &y1)))
 		return err_buf;
 
 	line.x0 = x0;
@@ -424,7 +437,8 @@ static char *act_line(struct ui_ctx *ctx, char *target, size_t argc, char **argv
 
 	if (r != UI_OK) {
 		err_buf = malloc(1024);
-		snprintf(err_buf, 1024, "act_line: failed: %s", ui_failure_str(r));
+		snprintf(
+		    err_buf, 1024, "act_line: failed: %s", ui_failure_str(r));
 	}
 
 	return err_buf;
@@ -439,7 +453,7 @@ static char *act_copy_rect(
 	long dst_x, dst_y, src_x, src_y, w, h;
 
 	if ((err_buf = parse_args(
-		"iiiiii", argc, argv, &dst_x, &dst_y, &src_x, &src_y, &w, &h)))
+		 "iiiiii", argc, argv, &dst_x, &dst_y, &src_x, &src_y, &w, &h)))
 		return err_buf;
 
 	rc.dst_x = dst_x;
@@ -454,7 +468,8 @@ static char *act_copy_rect(
 
 	if (r != UI_OK) {
 		err_buf = malloc(1024);
-		snprintf(err_buf, 1024, "act_copy_rect: failed: %s", ui_failure_str(r));
+		snprintf(err_buf, 1024, "act_copy_rect: failed: %s",
+		    ui_failure_str(r));
 	}
 
 	return err_buf;
@@ -526,10 +541,12 @@ static char *parse_args(const char *fmt, size_t argc, char **argv, ...)
 	va_list args;
 	va_start(args, argv);
 	char *err_buf = malloc(1024);
-	if (!err_buf) FATAL_ERR("parse_args: OOM");
+	if (!err_buf)
+		FATAL_ERR("parse_args: OOM");
 
 	if (argc != strlen(fmt)) {
-		snprintf(err_buf, 1024, "failure: got %zu arguments, expected %lu.", argc,
+		snprintf(err_buf, 1024,
+		    "failure: got %zu arguments, expected %lu.", argc,
 		    strlen(fmt));
 		return err_buf;
 	}
@@ -542,7 +559,8 @@ static char *parse_args(const char *fmt, size_t argc, char **argv, ...)
 		case 'c':
 			struct color *cout = va_arg(args, struct color *);
 			if (!parse_color(in, cout)) {
-				snprintf(err_buf, 1024, "failure: expected color, got: %s", in);
+				snprintf(err_buf, 1024,
+				    "failure: expected color, got: %s", in);
 				return err_buf;
 			}
 
@@ -553,7 +571,8 @@ static char *parse_args(const char *fmt, size_t argc, char **argv, ...)
 			long iout = strtol(in, &end, 0);
 			*out = iout;
 			if (*end != '\0') {
-				snprintf(err_buf, 1024, "failure: expected number, got: %s", in);
+				snprintf(err_buf, 1024,
+				    "failure: expected number, got: %s", in);
 				return err_buf;
 			}
 			break;

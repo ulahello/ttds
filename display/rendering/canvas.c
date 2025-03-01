@@ -65,7 +65,8 @@ void rendering_fill(struct canvas *c, struct color color)
 			draw_point(c, x, y, color);
 }
 
-DEFN_RENDER(rect) {
+DEFN_RENDER(rect)
+{
 	uint16_t right_edge = rect->x + rect->w;
 	uint16_t bottom_edge = rect->y + rect->h;
 	for (uint16_t y = rect->y; y < bottom_edge && y < c->height; y++)
@@ -73,7 +74,8 @@ DEFN_RENDER(rect) {
 			draw_point(c, x, y, rect->c);
 }
 
-DEFN_RENDER(circle) {
+DEFN_RENDER(circle)
+{
 	uint16_t x = circle->r;
 	uint16_t y = 0;
 	int32_t t1 = circle->r / 16;
@@ -123,7 +125,8 @@ DEFN_RENDER(circle) {
 	}
 }
 
-DEFN_RENDER(line) {
+DEFN_RENDER(line)
+{
 	const struct color color = line->c;
 
 	// I think this is essentially Bresenham's line algorithm, as in, that
@@ -210,7 +213,8 @@ DEFN_RENDER(line) {
 	}
 }
 
-DEFN_RENDER(rect_copy) {
+DEFN_RENDER(rect_copy)
+{
 	const struct rect_copy rc = *rect_copy;
 
 	// The regions may overlap, so we care whether we are incrementing or
@@ -272,7 +276,8 @@ static float bezier2_arclen_approx(struct bezier2 b, size_t n)
 	return dist;
 }
 
-DEFN_RENDER(bezier2) {
+DEFN_RENDER(bezier2)
+{
 	const struct bezier2 b = *bezier2;
 
 	// TODO: not pixel perfect (this approach is heuristic)
