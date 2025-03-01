@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 #define MAX_PANES 1024
+#define PANE_DELAY 1000
 
 struct pane {
 	char *name;
@@ -165,7 +166,7 @@ static void *rotate_panes(void *arg)
 	fds[1].fd = ctx->sync_fd_rx;
 	fds[1].events = POLLIN;
 
-	int sleep_time = 1000;
+	int sleep_time = PANE_DELAY;
 
 	size_t idx_increment = 1;
 
@@ -203,14 +204,18 @@ static void *rotate_panes(void *arg)
 			}
 
 			clock_gettime(CLOCK_MONOTONIC_RAW, &b);
-			int delta = (b.tv_nsec / 1000 / 1000) -
+			int delta = (b.tv_sec - a.tv_sec) * 1000 +
+			    (b.tv_nsec / 1000 / 1000) -
 			    (a.tv_nsec / 1000 / 1000);
 
 			sleep_time -= delta;
-			continue;
+			if (sleep_time < 0) {
+				sleep_time = PANE_DELAY;
+				idx_increment = 1;
+			}
 		} else {
 			idx_increment = 1;
-			sleep_time = 1000;
+			sleep_time = PANE_DELAY;
 		}
 	}
 
