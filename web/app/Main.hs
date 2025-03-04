@@ -14,7 +14,7 @@ import Network.HTTP.Types.Status (badRequest400, unauthorized401)
 import Proc (Proc, call, kill, launch, mkCommand)
 import System.Environment (getArgs)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
-import Web.Scotty (ActionM, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
+import Web.Scotty (ScottyM, ActionM, capture, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
 
 foreign import ccall "reallyExit" reallyExit :: IO ()
 
@@ -40,46 +40,10 @@ runWebServer proc ts =
       callCreate pane color
       registerPane pane
 
-    post "/pane/:pane/rect" $ do
-      pane <- pathParam "pane"
-      color <- queryParam "color"
-      x <- queryParam "x"
-      y <- queryParam "y"
-      w <- queryParam "w"
-      h <- queryParam "h"
-      checkAuthScotty pane
-      callRect pane color x y w h
-
-    post "/pane/:pane/circle" $ do
-      pane <- pathParam "pane"
-      color <- queryParam "color"
-      x <- queryParam "x"
-      y <- queryParam "y"
-      r <- queryParam "r"
-      checkAuthScotty pane
-      callCircle pane color x y r
-
-    post "/pane/:pane/line" $ do
-      pane <- pathParam "pane"
-      color <- queryParam "color"
-      x <- queryParam "x1"
-      y <- queryParam "y1"
-      x' <- queryParam "x2"
-      y' <- queryParam "y2"
-      checkAuthScotty pane
-      callLine pane color x y x' y'
-
-    post "/pane/:pane/copy_rect" $ do
-      pane <- pathParam "pane"
-      x <- queryParam "x"
-      y <- queryParam "y"
-      w <- queryParam "w"
-      h <- queryParam "h"
-      x' <- queryParam "x2"
-      y' <- queryParam "y2"
-
-      checkAuthScotty pane
-      callCopyRect pane x y w h x' y'
+    makeDrawRoute "RECT" "rect" ["color", "x", "y", "w", "h"]
+    makeDrawRoute "CIRCLE" "circle" ["color", "x", "y", "r"]
+    makeDrawRoute "LINE" "line" ["color", "x", "y", "x2", "y2"]
+    makeDrawRoute "COPY_RECT" "copy_rect" ["x2", "y2", "x", "y", "w", "h"]
 
     delete "/pane/:pane" $
       pathParam "pane" >>= checkAuthScotty >>= \pane ->
@@ -87,6 +51,13 @@ runWebServer proc ts =
 
     notFound $ text "404\n"
   where
+    makeDrawRoute :: String -> String -> [String] -> ScottyM ()
+    makeDrawRoute cmd slug args = post (capture $ "/pane/:pane/" ++ slug) $ do
+      pane <- pathParam "pane"
+      vals <- mapM (queryParam . pack) args
+      _ <- checkAuthScotty pane
+      callStr $ unpack pane ++ ": " ++ cmd ++ " " ++ unwords vals
+
     callAct cmd = liftIO $ call proc cmd
     routeRaw cmd = callAct cmd >>= text . pack
 
@@ -104,12 +75,6 @@ runWebServer proc ts =
         serve False = status unauthorized401 >> finish
 
     callCreate name color = callStr $ unpack name ++ ": CREATE " ++ color
-    callRect name color x y w h = callStr $ unpack name ++ ": RECT " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h
-    callCircle name color x y r = callStr $ unpack name ++ ": CIRCLE " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ r
-    callLine name color x y x' y' = callStr $ unpack name ++ ": LINE " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ x' ++ " " ++ y'
-
-    callCopyRect name x y w h x' y' = callStr $ unpack name ++ ": COPY_RECT " ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h ++ " " ++ x' ++ " " ++ y'
-
     callDelete name = callStr $ unpack name ++ ": REMOVE"
 
     callStr cmd = (liftIO . callAct . mkCommand) cmd >>= \case
