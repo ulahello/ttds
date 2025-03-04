@@ -59,6 +59,28 @@ runWebServer proc ts =
       checkAuthScotty pane
       callCircle pane color x y r
 
+    post "/pane/:pane/line" $ do
+      pane <- pathParam "pane"
+      color <- queryParam "color"
+      x <- queryParam "x1"
+      y <- queryParam "y1"
+      x' <- queryParam "x2"
+      y' <- queryParam "y2"
+      checkAuthScotty pane
+      callLine pane color x y x' y'
+
+    post "/pane/:pane/copy_rect" $ do
+      pane <- pathParam "pane"
+      x <- queryParam "x"
+      y <- queryParam "y"
+      w <- queryParam "w"
+      h <- queryParam "h"
+      x' <- queryParam "x2"
+      y' <- queryParam "y2"
+
+      checkAuthScotty pane
+      callCopyRect pane x y w h x' y'
+
     delete "/pane/:pane" $
       pathParam "pane" >>= checkAuthScotty >>= \pane ->
         callDelete pane >> liftIO (unregister ts pane)
@@ -84,6 +106,10 @@ runWebServer proc ts =
     callCreate name color = callStr $ unpack name ++ ": CREATE " ++ color
     callRect name color x y w h = callStr $ unpack name ++ ": RECT " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h
     callCircle name color x y r = callStr $ unpack name ++ ": CIRCLE " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ r
+    callLine name color x y x' y' = callStr $ unpack name ++ ": LINE " ++ color ++ " " ++ x ++ " " ++ y ++ " " ++ x' ++ " " ++ y'
+
+    callCopyRect name x y w h x' y' = callStr $ unpack name ++ ": COPY_RECT " ++ " " ++ x ++ " " ++ y ++ " " ++ w ++ " " ++ h ++ " " ++ x' ++ " " ++ y'
+
     callDelete name = callStr $ unpack name ++ ": REMOVE"
 
     callStr cmd = (liftIO . callAct . mkCommand) cmd >>= \case
