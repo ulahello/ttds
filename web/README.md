@@ -44,14 +44,15 @@ Auth: db0b4cf0-e0a9-49c5-918a-52c13acbcbd7
 
 The following methods are allowed:
 
-| Method | Path                     | Query Parameters               | Auth Required? | Description                         |
-|--------|--------------------------|--------------------------------|----------------|-------------------------------------|
-| POST   | /pane/\<name\>           | `color`                        | No.            | Create a pane with the given color. |
-| POST   | /pane/\<name\>/rect      | `color`, `x`, `y`, `w`, `h`    | Yes.           | Draw a rectangle on a pane.         |
-| POST   | /pane/\<name\>/circle    | `color`, `x`, `y`, `r`         | Yes.           | Draw a circle on a pane.            |
-| POST   | /pane/\<name\>/line      | `color`, `x`, `y`, `x2`, `y2`  | Yes.           | Draw a line on a pane.              |
-| POST   | /pane/\<name\>/copy_rect | `x`, `y`, `w`, `h`, `x2`, `y2` | Yes.           | Copy a rectangle to another place.  |
-| DELETE | /pane/\<name\>           | None.                          | Yes.           | Delete a pane.                      |
+| Method | Path                     | Query Parameters                            | Auth Required? | Description                                                            |
+|--------|--------------------------|---------------------------------------------|----------------|------------------------------------------------------------------------|
+| POST   | /pane/\<name\>           | `color`                                     | No.            | Create a pane with the given color.                                    |
+| POST   | /pane/\<name\>/rect      | `color`, `x`, `y`, `w`, `h`                 | Yes.           | Draw a rectangle on a pane.                                            |
+| POST   | /pane/\<name\>/circle    | `color`, `x`, `y`, `r`                      | Yes.           | Draw a circle on a pane.                                               |
+| POST   | /pane/\<name\>/line      | `color`, `x`, `y`, `x2`, `y2`               | Yes.           | Draw a line on a pane.                                                 |
+| POST   | /pane/\<name\>/copy_rect | `x`, `y`, `w`, `h`, `x2`, `y2`              | Yes.           | Copy a rectangle to another place.                                     |
+| POST   | /pane/\<name\>/bezier2   | `color`, `x0`, `y0`, `x1`, `y1`, `x2`, `y2` | Yes.           | Draw a quadratic bézier curve on a pane with the given control points. |
+| DELETE | /pane/\<name\>           | None.                                       | Yes.           | Delete a pane.                                                         |
 
 
 ### Types
