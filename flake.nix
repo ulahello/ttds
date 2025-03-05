@@ -14,7 +14,7 @@
         ];
 
         CC = "clang";
-	QEMU_NET_OPTS = "hostfwd=tcp:127.0.0.1:8080-:8080";
+        QEMU_NET_OPTS = "hostfwd=tcp::8080-:80";
       };
 
     packages.x86_64-linux.display =
@@ -31,17 +31,34 @@
 
     nixosModules.everything =
       { config, ... }: {
-        networking.firewall.allowedTCPPorts = [ 8080 ];
+        networking.firewall.allowedTCPPorts = [ 80 ];
         systemd.services.ttds-runner = {
-	  wantedBy = [ "multi-user.target" ];
-	  after = [ "network.target" ];
-	  description = "Run the ttds web server, wrapping the display server.";
-
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network.target" ];
+          description = "Run the ttds web server, wrapping the display server.";
           serviceConfig = {
-	    ExecStart = "${self.packages.x86_64-linux.web}/bin/ttds-web ${self.packages.x86_64-linux.display}/bin/ttds";
-	    WorkingDirectory = "/etc";
-	  };
-	};
+            ExecStart = "${self.packages.x86_64-linux.web}/bin/ttds-web ${self.packages.x86_64-linux.display}/bin/ttds";
+            WorkingDirectory = "/etc";
+          };
+        };
+
+        services.nginx.enable = true;
+        services.nginx.config = ''
+	  events {}
+
+	  http {
+            limit_req_zone $binary_remote_addr zone=api:10m rate=20r/s;
+
+            server {
+              listen 80;
+
+              location / {
+                limit_req zone=api burst=50 nodelay;
+                proxy_pass http://localhost:8080/;
+              }
+            }
+	  }
+        '';
       };
 
     nixosConfigurations.test-vm = nixpkgs.lib.nixosSystem {
