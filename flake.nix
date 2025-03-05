@@ -59,6 +59,9 @@
             }
 	  }
         '';
+
+        # Literal string "pass"
+        environment.etc."admin.pass".text = "14|8|1|RfLpAkDgsS08AnUlq+ZAnytfSJ+HmHYpx1/rZKSxjCo=|8SoSVn8LCPhwy7ShTJDCeX8YDzD+5ecdodmqYWWzm68HVtmxrPOkJqT5ltwQpoUVF4Zdfh1ynKF9f5DLtJQMkA==\n";
       };
 
     nixosConfigurations.test-vm = nixpkgs.lib.nixosSystem {
@@ -71,9 +74,6 @@
 	    password = "admin";
 	    extraGroups = [ "wheel" ];
 	  };
-
-          # Literal string "pass"
-	  environment.etc."admin.pass".text = "14|8|1|RfLpAkDgsS08AnUlq+ZAnytfSJ+HmHYpx1/rZKSxjCo=|8SoSVn8LCPhwy7ShTJDCeX8YDzD+5ecdodmqYWWzm68HVtmxrPOkJqT5ltwQpoUVF4Zdfh1ynKF9f5DLtJQMkA==\n";
 	}
 	self.nixosModules.everything
       ];
