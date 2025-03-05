@@ -222,14 +222,7 @@ static void *rotate_panes(void *arg)
 	int r;
 
 	struct ui_ctx *ctx = arg;
-	struct pollfd fds[2];
-	fds[0].fd = ctx->cancellation_fd;
-	fds[0].events = POLLIN;
-	fds[1].fd = ctx->sync_fd_rx;
-	fds[1].events = POLLIN;
-
 	int sleep_time = PANE_DELAY;
-
 	bool switching = true;
 
 	size_t i = 0;
