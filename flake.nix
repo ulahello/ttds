@@ -53,7 +53,7 @@
               listen 80;
 
               location / {
-                add_header Access-Control-Allow-Origin *;
+                add_header 'Access-Control-Allow-Origin' '*';
 
                 limit_req zone=api burst=50 nodelay;
                 proxy_pass http://localhost:8080/;
