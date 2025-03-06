@@ -53,10 +53,16 @@
               listen 80;
 
               location / {
+                add_header 'Access-Control-Allow-Origin' '*';
+
+                if ($request_method = OPTIONS ) {
+                    add_header Content-Length 0;
+                    add_header Content-Type text/plain;
+                    return 200;
+                }
+
                 limit_req zone=api burst=50 nodelay;
                 proxy_pass http://localhost:8080/;
-
-                add_header 'Access-Control-Allow-Origin' '*';
               }
             }
 	  }
