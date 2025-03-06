@@ -56,6 +56,7 @@
                 if ($request_method = OPTIONS ) {
                     add_header 'Access-Control-Allow-Origin' '*';
                     add_header 'Access-Control-Allow-Headers' '*';
+                    add_header 'Access-Control-Allow-Methods' '*';
 
                     add_header Content-Length 0;
                     add_header Content-Type text/plain;
@@ -64,6 +65,7 @@
 
                 add_header 'Access-Control-Allow-Origin' '*';
                 add_header 'Access-Control-Allow-Headers' '*';
+                add_header 'Access-Control-Allow-Methods' '*';
 
                 limit_req zone=api burst=50 nodelay;
                 proxy_pass http://localhost:8080/;
