@@ -4,13 +4,13 @@
 
 module Main where
 
-import Auth (TokenStore, checkAuth, initTokenStore, register, unregister, verifyAdmin)
+import Auth (TokenStore, checkAuth, initTokenStore, register, unregister, verifyAdmin, AuthStatus(..))
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
 import Data.Text.Lazy (pack, toStrict)
 import Data.UUID (toText)
 import GHC.Conc (atomically)
-import Network.HTTP.Types.Status (badRequest400, unauthorized401, conflict409, internalServerError500)
+import Network.HTTP.Types.Status (badRequest400, unauthorized401, forbidden403, conflict409, internalServerError500)
 import Proc (Proc, call, kill, launch, mkCommand, mkUnvalidatedCommand, mkComp)
 import System.Environment (getArgs)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
@@ -75,8 +75,9 @@ runWebServer proc ts =
         check (Just uuid) = liftIO $ checkAuth ts name uuid
         check Nothing = status unauthorized401 >> finish
 
-        serve True = return name
-        serve False = status unauthorized401 >> finish
+        serve Allowed = return name
+        serve Disallowed = status forbidden403 >> finish
+	serve BadToken = status unauthorized401 >> finish
 
     callCreate name color = callCmd $ mkCommand (mkComp name) (mkComp "CREATE") [mkComp color]
 

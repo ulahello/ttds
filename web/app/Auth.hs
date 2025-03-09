@@ -1,7 +1,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Auth (register, unregister, checkAuth, TokenStore, initTokenStore, verifyAdmin) where
+module Auth (register, unregister, checkAuth, TokenStore, initTokenStore, verifyAdmin, AuthStatus(..)) where
 
 import Control.Concurrent.STM (STM, modifyTVar, newTVarIO)
 import Control.Concurrent.STM.TVar (TVar, readTVar)
@@ -16,6 +16,8 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy qualified as L
 import Data.UUID (UUID, fromText)
 import Data.UUID.V4 (nextRandom)
+
+data AuthStatus = BadToken | Allowed | Disallowed
 
 data BadPassfileException = WrongSpec | CantDecode deriving (Show)
 
@@ -50,16 +52,15 @@ initTokenStore =
     parse [cred] = return $ pack cred
     parse _ = throwIO WrongSpec
 
-checkAuth :: TokenStore -> Name -> L.Text -> IO Bool
+checkAuth :: TokenStore -> Name -> L.Text -> IO AuthStatus
 checkAuth ts name t = case fromText $ L.toStrict t of
   Just token -> atomically $ checkAuth' token
-  Nothing -> throwIO BadTokenException
+  Nothing -> return BadToken
   where
-    checkAuth' :: UUID -> STM Bool
     checkAuth' uuid = check uuid . tokens <$> readTVar ts
     check uuid toks = case toks Map.!? name of
-      Just x -> x == uuid
-      Nothing -> False
+      Just x -> if x == uuid then Allowed else Disallowed
+      Nothing -> Disallowed
 
 unregister :: TokenStore -> Name -> IO ()
 unregister ts name = atomically $ modifyTVar ts unregister'
