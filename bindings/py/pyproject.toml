@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ttds-py"
+version = "0.1.0"
+description = "Python bindings for the ttds API."
+authors = ["Tali Auster <me@tali.network>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
