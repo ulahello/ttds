@@ -5,8 +5,8 @@
 import ttds_py
 import time
 
-NET_LOC = '100.95.28.105:8080'
-NAME = 'unique-name'
+NET_LOC = "100.95.28.105:8080"
+NAME = "unique-name"
 
 # Create a connection to NET_LOC. For testing purposes, I've got this hardcoded
 # to my testing machine's IP, but you'll probably want to make it
