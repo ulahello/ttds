@@ -65,7 +65,10 @@ runWebServer proc ts =
     registerPane name =
       (liftIO . register ts) name >>= \case
         Just uuid -> (text . pack . T.unpack . toText) uuid
-        Nothing -> status badRequest400 >> text "Pane with same name exists." >> finish
+        -- If we're here, this means we've already created the pane in the C
+        -- layer. If the pane already exists in our memory, then, we've done
+        -- something wrong.
+        Nothing -> status internalServerError500 >> text "Pane with same name exists." >> finish
 
     checkAuthScotty name = header "Auth" >>= check >>= serve
       where
