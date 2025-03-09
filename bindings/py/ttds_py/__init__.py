@@ -58,14 +58,12 @@ class Pane:
 
     def __enter__(self):
         self._token = self.conn.request("pane", self.name, "create", color=self.color)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_traceback):
         assert self._token is not None
         self.conn.request("pane", self.name, auth=self._token, method="DELETE")
 
-    # TODO: copy_rect, bezier2 methods.
-    # Also, a testing environment in which I port forward into
-    # ttds.tali.network or the like.
     def rect(self, x: int, y: int, w: int, h: int, color: Color):
         self._draw("rect", x=x, y=y, w=w, h=h, color=color)
 
@@ -74,6 +72,12 @@ class Pane:
 
     def line(self, x: int, y: int, x2: int, y2: int, color: Color):
         self._draw("line", x=x, y=y, x2=x2, y2=y2, color=color)
+
+    def copy_rect(self, x: int, y: int, w: int, h: int, x2: int, y2: int):
+        self._draw("copy_rect", x=x, y=y, w=w, h=h, x2=x2, y2=y2)
+
+    def bezier2(self, x0, y0, x1, y1, x2, y2, color: Color):
+        self._draw("bezier2", x0=x0, y0=y0, x1=x1, y1=y1, x2=x2, y2=y2, color=color)
 
     def _draw(self, shape, **kwargs):
         assert self._token is not None
