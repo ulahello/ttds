@@ -22,7 +22,7 @@ class Color:
     b: int
 
     def __init__(self, r: int, g: int, b: int):
-        if r not in range(0, 255) or g not in range(0, 255) or b not in range(0, 255):
+        if r not in range(0, 256) or g not in range(0, 256) or b not in range(0, 256):
             raise ValueError("Color values must be at most 255.")
 
         self.r = r
