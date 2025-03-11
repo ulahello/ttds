@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from requests import request
 from typing import Optional
 
-
 @dataclass
 class Color:
     r: int
@@ -11,9 +10,8 @@ class Color:
     b: int
 
     def __init__(self, r: int, g: int, b: int):
-        assert 0 <= r and r <= 255
-        assert 0 <= g and g <= 255
-        assert 0 <= b and b <= 255
+        if r not in range(0, 255) or g not in range(0, 255) or b not in range(0, 255):
+            raise ValueError("Color values must be at most 255.")
 
         self.r = r
         self.g = g
