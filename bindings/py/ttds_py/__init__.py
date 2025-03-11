@@ -3,6 +3,18 @@ from dataclasses import dataclass, field
 from requests import request, exceptions
 from typing import Optional
 
+class DuplicatePaneError(Exception):
+    name: Optional[str]
+
+    def __init__(self, name: Optional[str] = None):
+        self.name = name
+
+    def __str__(self):
+        if self.name is not None:
+            return f"The name \"{self.name}\" is not unique."
+        else:
+            return "Pane already exists."
+
 @dataclass
 class Color:
     r: int
@@ -49,6 +61,9 @@ class Connection:
             e.add_note("Ask for help!")
             raise
 
+        if r.status_code == 409:
+            raise DuplicatePaneError()
+
         r.raise_for_status()
 
         return str(r.content, "utf-8")
@@ -63,7 +78,12 @@ class Pane:
     _token: Optional[str] = field(default=None)  # TODO: Make this a UUIDv4.
 
     def __enter__(self):
-        self._token = self.conn.request("pane", self.name, "create", color=self.color)
+        try:
+            self._token = self.conn.request("pane", self.name, "create", color=self.color)
+        except DuplicatePaneError as e:
+            e.name = self.name
+            raise
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_traceback):
