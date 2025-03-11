@@ -15,6 +15,14 @@ class DuplicatePaneError(Exception):
         else:
             return "Pane already exists."
 
+class UnAuthError(Exception):
+    def __str__(self):
+        return "Authorization for the request failed. The quickest way to resolve this is likely to recreate the pane."
+
+class NoAuthError(Exception):
+    def __str__(self):
+        return "A route expecting an Auth header either didn't get one, or it was malformed. This is almost certainly a bug in the Python bindings."
+
 @dataclass
 class Color:
     r: int
@@ -63,8 +71,16 @@ class Connection:
 
         if r.status_code == 409:
             raise DuplicatePaneError()
+        elif r.status_code == 401:
+            raise NoAuthError()
+        elif r.status_code == 403:
+            raise UnAuthError()
 
-        r.raise_for_status()
+        try:
+            r.raise_for_status()
+        except exceptions.HTTPError as e:
+            e.add_note("An unexpected HTTP error code came up. This is likely a bug in the Python bindings.")
+            raise
 
         return str(r.content, "utf-8")
 
