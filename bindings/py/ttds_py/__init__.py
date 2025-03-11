@@ -1,6 +1,6 @@
 from urllib.parse import urlunparse, urlencode, quote
 from dataclasses import dataclass, field
-from requests import request
+from requests import request, exceptions
 from typing import Optional
 
 @dataclass
@@ -40,7 +40,15 @@ class Connection:
         target = urlunparse((scheme, self._host, route, "", query, ""))
 
         headers = None if auth is None else {"Auth": auth}
-        r = request(method or "POST", target, headers=headers)
+
+        try:
+            r = request(method or "POST", target, headers=headers)
+        except exceptions.ConnectionError as e:
+            e.add_note(f"\033[31;1mA request made by this connection object to {scheme}://{self._host} failed.\033[0m")
+            e.add_note("It's likely that this connection object is misconfigured or that the server is down.")
+            e.add_note("Ask for help!")
+            raise
+
         r.raise_for_status()
 
         return str(r.content, "utf-8")
