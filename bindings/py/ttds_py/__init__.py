@@ -11,9 +11,9 @@ class Color:
     b: int
 
     def __init__(self, r: int, g: int, b: int):
-        assert r <= 255
-        assert g <= 255
-        assert b <= 255
+        assert 0 <= r and r <= 255
+        assert 0 <= g and g <= 255
+        assert 0 <= b and b <= 255
 
         self.r = r
         self.g = g
