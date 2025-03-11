@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 #define MAX_PANES 1024
-#define PANE_DELAY 1000
+#define PANE_DELAY 5000
 
 struct pane {
 	char *name;
