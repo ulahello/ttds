@@ -71,6 +71,7 @@ static char *act_bezier2(
 
 static char *act_term(struct ui_ctx *, char *target, size_t argc, char **argv);
 static char *act_save(struct ui_ctx *, char *target, size_t argc, char **argv);
+static char *act_count(struct ui_ctx *, char *target, size_t argc, char **argv);
 
 static bool parse_color(const char *in, struct color *out);
 static char *parse_args(const char *fmt, size_t argc, char **argv, ...);
@@ -88,6 +89,7 @@ static const struct action_container actions[] = {
 static const struct action_container root_actions[] = {
 	{ "TERMINATE", act_term },
 	{ "SAVE", act_save },
+	{ "COUNT", act_count },
 };
 
 void *cmd_thread(void *arg)
@@ -572,6 +574,21 @@ static char *act_save(
 	}
 
 	return err_buf;
+}
+
+static char *act_count(
+    struct ui_ctx *ctx, char *target, size_t argc, char **argv)
+{
+	(void)target;
+
+	char *ret_buf = NULL;
+	if ((ret_buf = parse_args("", argc, argv)))
+		return ret_buf;
+
+	ret_buf = malloc(1024);
+	snprintf(ret_buf, 1024, "%d", ui_pane_count(ctx));
+
+	return ret_buf;
 }
 
 static bool parse_color(const char *in, struct color *out)

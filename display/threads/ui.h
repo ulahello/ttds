@@ -27,6 +27,8 @@ void ui_sync(struct ui_ctx *ctx);
 enum ui_failure ui_pane_create(
     struct ui_ctx *ctx, char *name, struct color fill);
 
+size_t ui_pane_count(struct ui_ctx *ctx);
+
 enum ui_failure ui_pane_remove(struct ui_ctx *ctx, char *name);
 
 enum ui_failure ui_pane_draw_shape(

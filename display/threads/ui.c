@@ -44,7 +44,9 @@ struct ui_ctx {
 };
 
 enum sleep_result {
-	SHOULD_CANCEL, SHOULD_SWITCH, SHOULD_SYNC,
+	SHOULD_CANCEL,
+	SHOULD_SWITCH,
+	SHOULD_SYNC,
 };
 
 static void *rotate_panes(void *);
@@ -160,7 +162,8 @@ void ui_sync(struct ui_ctx *ctx)
 		fprintf(stderr, "failed to write to sync_fd_tx: %s", STR_ERR);
 }
 
-static enum sleep_result cancellable_sleep(int cancellation_fd, int sync_fd, int *sleep_time)
+static enum sleep_result cancellable_sleep(
+    int cancellation_fd, int sync_fd, int *sleep_time)
 {
 	// If sleep_time is too low during a barrage of requests, poll(2) might
 	// just not exhuast its timeout, and delta will be zero we'll never
@@ -182,27 +185,30 @@ static enum sleep_result cancellable_sleep(int cancellation_fd, int sync_fd, int
 	clock_gettime(CLOCK_MONOTONIC_RAW, &a);
 
 	int r = poll(fds, sizeof(fds) / sizeof(*fds), *sleep_time);
-	if (r == -1) FATAL_ERR("cancellable_sleep: poll(2) failed: %s", STR_ERR);
+	if (r == -1)
+		FATAL_ERR("cancellable_sleep: poll(2) failed: %s", STR_ERR);
 
 	if (fds[0].revents &= POLLIN) {
 		// Cancellation fd.
 		if (read(fds[0].fd, buf, 1) != 1)
-			fprintf(stderr, "cancellable_sleep: failed to read from cancellation fd.\n");
+			fprintf(stderr,
+			    "cancellable_sleep: failed to read from cancellation fd.\n");
 
 		*sleep_time = PANE_DELAY;
 		return SHOULD_CANCEL;
 	} else if (fds[1].revents &= POLLIN) {
 		// Sync fd.
 		if (read(fds[1].fd, buf, 1) != 1)
-			fprintf(stderr, "cancellable_sleep: failed to read from sync fd.\n");
+			fprintf(stderr,
+			    "cancellable_sleep: failed to read from sync fd.\n");
 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &b);
 
 		uint64_t prior = (a.tv_sec * 1000) + (a.tv_nsec / 1000 / 1000);
 		uint64_t post = (b.tv_sec * 1000) + (b.tv_nsec / 1000 / 1000);
-		int delta = (int) post - prior;
+		int delta = (int)post - prior;
 
-		if (delta < 20) 
+		if (delta < 20)
 			delta += 20;
 
 		if (delta >= *sleep_time) {
@@ -234,7 +240,8 @@ static void *rotate_panes(void *arg)
 			FATAL_ERR("ui: couldn't take lock: %s", strerror(r));
 
 		i += switching;
-		if (i >= ctx->panes.count) i = 0;
+		if (i >= ctx->panes.count)
+			i = 0;
 
 		struct pane *p = &ctx->panes.panes[i];
 
@@ -245,7 +252,8 @@ static void *rotate_panes(void *arg)
 		if (r != 0)
 			FATAL_ERR("ui: couldn't return lock: %s", strerror(r));
 
-		enum sleep_result r = cancellable_sleep(ctx->cancellation_fd, ctx->sync_fd_rx, &sleep_time);
+		enum sleep_result r = cancellable_sleep(
+		    ctx->cancellation_fd, ctx->sync_fd_rx, &sleep_time);
 		switch (r) {
 		case SHOULD_SWITCH:
 			switching = true;
@@ -312,6 +320,18 @@ enum ui_failure ui_pane_create(
 	pthread_mutex_unlock(&ctx->panes.lock);
 
 	return UI_OK;
+}
+
+size_t ui_pane_count(struct ui_ctx *ctx)
+{
+	int r = pthread_mutex_lock(&ctx->panes.lock);
+	if (r != 0)
+		FATAL_ERR(
+		    "ui_pane_count: failed to take lock: %s", strerror(r));
+
+	size_t ret = ctx->panes.count;
+	pthread_mutex_unlock(&ctx->panes.lock);
+	return ret;
 }
 
 enum ui_failure ui_pane_remove(struct ui_ctx *ctx, char *name)
