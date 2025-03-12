@@ -16,7 +16,7 @@ draw on is really three separate but related bits of software.
 
 1. There's the code that controls the screen. This bears no mention here,
    but there be dragons.
-2. The code that provides an **HTTP API.*** If you're you're familiar with what this
+2. The code that provides an **HTTP API.** If you're you're familiar with what this
    is and how it operates, you can skim this document. Otherwise, you may want
    to keep reading.
 3. Language-specific **API bindings.** If you're unfamiliar with how HTTP works,
@@ -74,7 +74,7 @@ You do *not* need to write HTTP requests to draw software. Instead, we've
 written some code to allow you to use Python, JavaScript, or TypeScript to
 accomplish the same tasks. If you want to use a different language (somebody
 *please* use APL, it would be so funny), you'll need to bind to the [raw
-*API](../web/README.md#reference). Otherwise,
+API](../web/README.md#reference). Otherwise,
 
 1. Python users, look [here](./python.md).
 2. JS or TS users, look [here](./js.md).
