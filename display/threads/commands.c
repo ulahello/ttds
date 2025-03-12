@@ -586,7 +586,7 @@ static char *act_count(
 		return ret_buf;
 
 	ret_buf = malloc(1024);
-	snprintf(ret_buf, 1024, "%d", ui_pane_count(ctx));
+	snprintf(ret_buf, 1024, "%ld", ui_pane_count(ctx));
 
 	return ret_buf;
 }
