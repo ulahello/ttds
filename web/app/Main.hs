@@ -72,12 +72,14 @@ runWebServer proc ts =
 
     checkAuthScotty name = header "Auth" >>= check >>= serve
       where
-        check (Just uuid) = liftIO $ checkAuth ts name uuid
         check Nothing = status unauthorized401 >> finish
+        check (Just uuid) = ((liftIO . atomically) (verifyAdmin ts $ toStrict uuid)) >>= \case
+          True -> return Allowed
+          False -> liftIO $ checkAuth ts name uuid
 
         serve Allowed = return name
         serve Disallowed = status forbidden403 >> finish
-	serve BadToken = status unauthorized401 >> finish
+        serve BadToken = status unauthorized401 >> finish
 
     callCreate name color = callCmd $ mkCommand (mkComp name) (mkComp "CREATE") [mkComp color]
 
