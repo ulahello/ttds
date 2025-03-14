@@ -34,7 +34,7 @@ mkComp = CommandComponent . validate
     shouldFilter c = (c == ' ') || (c == ';') || (c == ':') || (c == '\n') || (c == '\0')
 
 mkCommand :: Target -> Action -> [Argument] -> Command
-mkCommand target action args = Command $ unComp target ++ ": " ++ unComp action ++ " " ++ (unwords $ map unComp args)
+mkCommand target action args = Command $ unComp target ++ ": " ++ unComp action ++ " " ++ unwords (map unComp args)
   where
     unComp (CommandComponent s) = s
 
