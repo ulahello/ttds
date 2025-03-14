@@ -14,7 +14,8 @@ import Network.HTTP.Types.Status (unauthorized401, forbidden403, conflict409, in
 import Proc (Proc, call, kill, launch, mkCommand, mkUnvalidatedCommand, mkComp)
 import System.Environment (getArgs)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
-import Web.Scotty (ScottyM, ActionM, capture, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
+import Web.Scotty (ScottyM, request, ActionM, capture, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
+import Network.Wai (remoteHost)
 
 foreign import ccall "reallyExit" reallyExit :: IO ()
 
@@ -34,11 +35,12 @@ runWebServer proc ts =
   scotty 8080 $ do
     post "/raw/:text" $ requireAdmin ts >> pathParam "text" >>= routeRaw
     post "/pane/:pane/create" $ do
+      rq <- request
       pane <- pathParam "pane"
       color <- queryParam "color"
       liftIO $ putStrLn color
       callCreate pane color
-      registerPane (T.pack pane)
+      registerPane (remoteHost rq) (T.pack pane)
 
     makeDrawRoute "RECT" "rect" ["color", "x", "y", "w", "h"]
     makeDrawRoute "CIRCLE" "circle" ["color", "x", "y", "r"]
@@ -63,13 +65,12 @@ runWebServer proc ts =
     callAct cmd = liftIO $ call proc cmd
     routeRaw cmd = (callAct . mkUnvalidatedCommand) cmd >>= text . pack
 
-    registerPane name =
-      (liftIO . register ts) name >>= \case
-        Just uuid -> (text . pack . T.unpack . toText) uuid
-        -- If we're here, this means we've already created the pane in the C
-        -- layer. If the pane already exists in our memory, then, we've done
-        -- something wrong.
-        Nothing -> status internalServerError500 >> text "Pane with same name exists." >> finish
+    registerPane peer name = liftIO (register ts peer name) >>= \case
+      Just uuid -> (text . pack . T.unpack . toText) uuid
+      -- If we're here, this means we've already created the pane in the C
+      -- layer. If the pane already exists in our memory, then, we've done
+      -- something wrong.
+      Nothing -> status internalServerError500 >> text "Pane with same name exists." >> finish
 
     checkAuthScotty name = header "Auth" >>= check >>= serve
       where
