@@ -8,7 +8,7 @@
         buildInputs = with pkgs; [
           systemd.dev meson ninja libdrm pkg-config
 
-          cabal-install ghc zlib hlint
+          cabal-install ghc zlib hlint ormolu
 
           just
         ];
