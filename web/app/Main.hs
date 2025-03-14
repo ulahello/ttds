@@ -10,7 +10,7 @@ import qualified Data.Text as T
 import Data.Text.Lazy (pack, toStrict)
 import Data.UUID (toText)
 import GHC.Conc (atomically)
-import Network.HTTP.Types.Status (badRequest400, unauthorized401, forbidden403, conflict409, internalServerError500)
+import Network.HTTP.Types.Status (unauthorized401, forbidden403, conflict409, internalServerError500)
 import Proc (Proc, call, kill, launch, mkCommand, mkUnvalidatedCommand, mkComp)
 import System.Environment (getArgs)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
@@ -91,7 +91,7 @@ runWebServer proc ts =
       x -> setStatusFromErr x >> (text . pack) x >> finish
 
     setStatusFromErr "act_create: failed: duplicate pane" = status conflict409
-    setStatusFromErr x = status internalServerError500
+    setStatusFromErr _ = status internalServerError500
 
 requireAdmin :: TokenStore -> ActionM ()
 requireAdmin ts = header "Auth" >>= isOk >>= verify
