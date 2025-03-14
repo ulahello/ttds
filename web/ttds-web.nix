@@ -1,5 +1,5 @@
 { mkDerivation, base, base64, bytestring, http-types, lib, process
-, scotty_0_22, scrypt, text, containers, stm, uuid
+, scotty_0_22, scrypt, text, network, containers, stm, uuid
 
 , cabal-install, curl, zstd
 }:
@@ -10,7 +10,7 @@ mkDerivation {
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
-    base base64 bytestring http-types process scotty_0_22 scrypt text containers stm uuid
+    base base64 bytestring http-types process scotty_0_22 scrypt text network containers stm uuid
   ];
 
   buildTools = [ curl cabal-install ];

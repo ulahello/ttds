@@ -1,9 +1,9 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Auth (register, unregister, checkAuth, TokenStore, initTokenStore, verifyAdmin, AuthStatus (..)) where
+module Auth (register, unregister, unregisterAllFrom, checkAuth, TokenStore, initTokenStore, verifyAdmin, AuthStatus (..)) where
 
-import Control.Concurrent.STM (STM, modifyTVar, newTVarIO)
+import Control.Concurrent.STM (STM, modifyTVar, newTVarIO, stateTVar)
 import Control.Concurrent.STM.TVar (TVar, readTVar)
 import Control.Exception (Exception, throwIO)
 import Control.Monad.STM (atomically)
@@ -16,7 +16,6 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Text.Lazy qualified as L
 import Data.UUID (UUID, fromText)
 import Data.UUID.V4 (nextRandom)
-import Network.Socket (SockAddr)
 
 data AuthStatus = BadToken | Allowed | Disallowed
 
@@ -38,7 +37,7 @@ type TokenStore = TVar TokenStoreInner
 data TokenStoreInner = TokenStoreInner
   { adminCred :: EncryptedPass,
     by_token :: Map.Map Name Token,
-    by_ip :: Map.Map SockAddr Name
+    by_ip :: Map.Map String [Name]
   }
 
 initTokenStore :: IO TokenStore
@@ -66,20 +65,33 @@ checkAuth ts name t = case fromText $ L.toStrict t of
       Nothing -> Disallowed
 
 unregister :: TokenStore -> Name -> IO ()
-unregister ts name = atomically $ modifyTVar ts unregister'
-  where
-    unregister' (TokenStoreInner {adminCred = admin, by_token = toks, by_ip = ips}) =
-      let toks' = Map.delete name toks
-       in TokenStoreInner
-            { adminCred = admin,
-              by_token = toks',
-              -- TODO: Remove all references to `name` in IP. This would require a
-              -- properly-done multi-indexed map type that I am *not* writing one
-              -- day before the event.
-              by_ip = ips
-            }
+unregister ts name = atomically $ modifyTVar ts (unregister' name)
 
-register :: TokenStore -> SockAddr -> Name -> IO (Maybe Token)
+unregister' :: Name -> TokenStoreInner -> TokenStoreInner
+unregister' name (TokenStoreInner {adminCred = admin, by_token = toks, by_ip = ips}) =
+  let toks' = Map.delete name toks
+   in TokenStoreInner
+        { adminCred = admin,
+          by_token = toks',
+          -- TODO: Remove all references to `name` in IP. This would require a
+          -- properly-done multi-indexed map type that I am *not* writing one
+          -- day before the event.
+          by_ip = ips
+        }
+
+unregisterAllFrom :: TokenStore -> String -> IO [Name]
+unregisterAllFrom ts peer = atomically $ stateTVar ts unregisterAllFrom'
+  where
+    unregisterAllFrom' (TokenStoreInner {adminCred = admin, by_token = toks, by_ip = ips}) =
+      let (targets, toks', ips') = case ips Map.!? peer of
+            Just vals -> (vals, removeMany vals toks, Map.delete peer ips)
+            Nothing -> ([], toks, ips)
+       in (targets, TokenStoreInner {adminCred = admin, by_token = toks', by_ip = ips'})
+
+    removeMany (x : xs) m = removeMany xs (Map.delete x m)
+    removeMany [] m = m
+
+register :: TokenStore -> String -> Name -> IO (Maybe Token)
 register ts peer name = nextRandom >>= atomically . register'
   where
     register' uuid = readTVar ts >>= tryUpdate uuid
@@ -92,7 +104,7 @@ register ts peer name = nextRandom >>= atomically . register'
       TokenStoreInner
         { adminCred = adminCred tsi,
           by_token = Map.insert name tok $ by_token tsi,
-          by_ip = Map.insert peer name $ by_ip tsi
+          by_ip = Map.insertWith (++) peer [name] $ by_ip tsi
         }
 
 verifyAdmin :: TokenStore -> Text -> STM Bool

@@ -4,18 +4,18 @@
 
 module Main where
 
-import Auth (AuthStatus (..), TokenStore, checkAuth, initTokenStore, register, unregister, verifyAdmin)
+import Data.Maybe (fromMaybe)
+import Auth (AuthStatus (..), TokenStore, checkAuth, initTokenStore, register, unregister, unregisterAllFrom, verifyAdmin)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
-import Data.Text.Lazy (pack, toStrict)
+import Data.Text.Lazy as L
 import Data.UUID (toText)
 import GHC.Conc (atomically)
 import Network.HTTP.Types.Status (conflict409, forbidden403, internalServerError500, unauthorized401)
-import Network.Wai (remoteHost)
 import Proc (Proc, call, kill, launch, mkCommand, mkComp, mkUnvalidatedCommand)
 import System.Environment (getArgs)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
-import Web.Scotty (ActionM, ScottyM, capture, delete, finish, header, notFound, pathParam, post, queryParam, request, scotty, status, text)
+import Web.Scotty (ActionM, ScottyM, capture, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
 
 foreign import ccall "reallyExit" reallyExit :: IO ()
 
@@ -34,13 +34,17 @@ runWebServer :: Proc -> TokenStore -> IO ()
 runWebServer proc ts =
   scotty 8080 $ do
     post "/raw/:text" $ requireAdmin ts >> pathParam "text" >>= routeRaw
+    post "/removefrom/:peer" $ requireAdmin ts >> pathParam "peer" >>= routeRemoveFrom
     post "/pane/:pane/create" $ do
-      rq <- request
       pane <- pathParam "pane"
       color <- queryParam "color"
       liftIO $ putStrLn color
       callCreate pane color
-      registerPane (remoteHost rq) (T.pack pane)
+
+      peer <- header "X-Forwarded-For"
+      let peer' = L.unpack $ fromMaybe "NO PEER" peer
+
+      registerPane peer' (T.pack pane)
 
     makeDrawRoute "RECT" "rect" ["color", "x", "y", "w", "h"]
     makeDrawRoute "CIRCLE" "circle" ["color", "x", "y", "r"]
@@ -60,10 +64,14 @@ runWebServer proc ts =
       pane <- pathParam "pane"
       vals <- mapM (queryParam . pack) args
       _ <- checkAuthScotty pane
-      callCmd $ mkCommand ((mkComp . T.unpack) pane) (mkComp cmd) (map mkComp vals)
+      callCmd $ mkCommand ((mkComp . T.unpack) pane) (mkComp cmd) (Prelude.map mkComp vals)
 
     callAct cmd = liftIO $ call proc cmd
     routeRaw cmd = (callAct . mkUnvalidatedCommand) cmd >>= text . pack
+
+    routeRemoveFrom :: String -> ActionM ()
+    routeRemoveFrom peer =
+      liftIO (unregisterAllFrom ts peer) >>= mapM_ (callDelete . T.unpack)
 
     registerPane peer name =
       liftIO (register ts peer name) >>= \case
