@@ -4,7 +4,7 @@ import Control.Concurrent.MVar (MVar, newMVar, withMVar)
 import Control.Exception (Exception)
 import Control.Exception.Base (throwIO)
 import System.IO (BufferMode (..), Handle, hGetLine, hPutStrLn, hSetBuffering)
-import System.Process (terminateProcess, CmdSpec (ShellCommand), CreateProcess (..), ProcessHandle, StdStream (CreatePipe, Inherit), createProcess)
+import System.Process (CmdSpec (ShellCommand), CreateProcess (..), ProcessHandle, StdStream (CreatePipe, Inherit), createProcess, terminateProcess)
 
 type Proc = MVar Process
 
@@ -21,14 +21,17 @@ instance Exception ProcFailureException
 newtype Command = Command String
 
 newtype CommandComponent = CommandComponent String
+
 type Target = CommandComponent
+
 type Argument = CommandComponent
+
 type Action = CommandComponent
 
 mkComp :: String -> CommandComponent
 mkComp = CommandComponent . validate
   where
-    validate (x:xs) = if shouldFilter x then '_' : validate xs else x : validate xs
+    validate (x : xs) = if shouldFilter x then '_' : validate xs else x : validate xs
     validate [] = []
 
     shouldFilter c = (c == ' ') || (c == ';') || (c == ':') || (c == '\n') || (c == '\0')

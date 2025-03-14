@@ -4,18 +4,18 @@
 
 module Main where
 
-import Auth (TokenStore, checkAuth, initTokenStore, register, unregister, verifyAdmin, AuthStatus(..))
+import Auth (AuthStatus (..), TokenStore, checkAuth, initTokenStore, register, unregister, verifyAdmin)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text as T
 import Data.Text.Lazy (pack, toStrict)
 import Data.UUID (toText)
 import GHC.Conc (atomically)
-import Network.HTTP.Types.Status (unauthorized401, forbidden403, conflict409, internalServerError500)
-import Proc (Proc, call, kill, launch, mkCommand, mkUnvalidatedCommand, mkComp)
+import Network.HTTP.Types.Status (conflict409, forbidden403, internalServerError500, unauthorized401)
+import Network.Wai (remoteHost)
+import Proc (Proc, call, kill, launch, mkCommand, mkComp, mkUnvalidatedCommand)
 import System.Environment (getArgs)
 import System.Posix.Signals (Handler (..), installHandler, sigINT)
-import Web.Scotty (ScottyM, request, ActionM, capture, delete, finish, header, notFound, pathParam, post, queryParam, scotty, status, text)
-import Network.Wai (remoteHost)
+import Web.Scotty (ActionM, ScottyM, capture, delete, finish, header, notFound, pathParam, post, queryParam, request, scotty, status, text)
 
 foreign import ccall "reallyExit" reallyExit :: IO ()
 
@@ -65,19 +65,21 @@ runWebServer proc ts =
     callAct cmd = liftIO $ call proc cmd
     routeRaw cmd = (callAct . mkUnvalidatedCommand) cmd >>= text . pack
 
-    registerPane peer name = liftIO (register ts peer name) >>= \case
-      Just uuid -> (text . pack . T.unpack . toText) uuid
-      -- If we're here, this means we've already created the pane in the C
-      -- layer. If the pane already exists in our memory, then, we've done
-      -- something wrong.
-      Nothing -> status internalServerError500 >> text "Pane with same name exists." >> finish
+    registerPane peer name =
+      liftIO (register ts peer name) >>= \case
+        Just uuid -> (text . pack . T.unpack . toText) uuid
+        -- If we're here, this means we've already created the pane in the C
+        -- layer. If the pane already exists in our memory, then, we've done
+        -- something wrong.
+        Nothing -> status internalServerError500 >> text "Pane with same name exists." >> finish
 
     checkAuthScotty name = header "Auth" >>= check >>= serve
       where
         check Nothing = status unauthorized401 >> finish
-        check (Just uuid) = (liftIO . atomically) (verifyAdmin ts $ toStrict uuid) >>= \case
-          True -> return Allowed
-          False -> liftIO $ checkAuth ts name uuid
+        check (Just uuid) =
+          (liftIO . atomically) (verifyAdmin ts $ toStrict uuid) >>= \case
+            True -> return Allowed
+            False -> liftIO $ checkAuth ts name uuid
 
         serve Allowed = return name
         serve Disallowed = status forbidden403 >> finish
@@ -87,9 +89,10 @@ runWebServer proc ts =
 
     callDelete name = callCmd $ mkCommand (mkComp name) (mkComp "REMOVE") []
 
-    callCmd cmd = callAct cmd >>= \case
-      "OK" -> return ()
-      x -> setStatusFromErr x >> (text . pack) x >> finish
+    callCmd cmd =
+      callAct cmd >>= \case
+        "OK" -> return ()
+        x -> setStatusFromErr x >> (text . pack) x >> finish
 
     setStatusFromErr "act_create: failed: duplicate pane" = status conflict409
     setStatusFromErr _ = status internalServerError500
