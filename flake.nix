@@ -47,7 +47,7 @@
 	  events {}
 
 	  http {
-            limit_req_zone $binary_remote_addr zone=api:10m rate=20000r/s;
+            limit_req_zone $binary_remote_addr zone=api:40m rate=20000r/s;
 
             server {
               listen 80;
