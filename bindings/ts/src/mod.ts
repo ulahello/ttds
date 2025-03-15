@@ -188,6 +188,16 @@ export class Pane {
     }
   }
 
+  async count(): Promise<number> {
+    const response = await makeRequest(this.#baseURL, `raw/root:%20COUNT`, { headers: { "Auth": this.#internalUUID }})
+
+    if (response.status !== 200) {
+      throw new Error(await response.text())
+    }
+
+    return parseInt(await response.text());
+  }
+
   async delete() {
     const response = await makeRequest(
       this.#baseURL,
