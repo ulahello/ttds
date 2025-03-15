@@ -47,7 +47,7 @@
 	  events {}
 
 	  http {
-            limit_req_zone $binary_remote_addr zone=api:10m rate=2000r/s;
+            limit_req_zone $binary_remote_addr zone=api:10m rate=20000r/s;
 
             server {
               listen 80;
@@ -67,7 +67,7 @@
                 add_header 'Access-Control-Allow-Headers' '*';
                 add_header 'Access-Control-Allow-Methods' '*';
 
-                limit_req zone=api burst=5000 nodelay;
+                limit_req zone=api burst=50000 nodelay;
                 proxy_pass http://localhost:8080/;
               }
             }
