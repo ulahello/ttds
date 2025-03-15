@@ -38,11 +38,11 @@ runWebServer proc ts =
     post "/pane/:pane/create" $ do
       pane <- pathParam "pane"
       color <- queryParam "color"
-      liftIO $ putStrLn color
       callCreate pane color
 
       peer <- header "X-Forwarded-For"
       let peer' = L.unpack $ fromMaybe "NO PEER" peer
+      liftIO $ putStrLn $ "Received pane: " ++ pane ++ " from: " ++ peer'
 
       registerPane peer' (T.pack pane)
 
