@@ -162,7 +162,7 @@ export class Pane {
 
   async draw(optionsParam: DrawOptions) {
     // We explicitly don't deconstruct type to get the type inference.
-    const { color } = optionsParam;
+    const { color, type } = optionsParam;
     let options: Partial<DrawOptions> = optionsParam;
 
     delete options["type"];
@@ -171,7 +171,7 @@ export class Pane {
     const entries = Object.entries(options).map(([k, v]) => `${k}=${v}`).join("&");
 
     let drawRequest: string;
-    drawRequest = `${options.type}?color=${normalizeColor(color)}&${entries}`;
+    drawRequest = `${type}?color=${normalizeColor(color)}&${entries}`;
 
     const response = await makeRequest(
       this.#baseURL,
