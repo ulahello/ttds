@@ -188,6 +188,7 @@ export class Pane {
     }
   }
 
+  /** Gets the count of all current panes. **Note**: Must be admin to see this. */
   async count(): Promise<number> {
     const response = await makeRequest(this.#baseURL, `raw/root:%20COUNT`, { headers: { "Auth": this.#internalUUID }})
 
