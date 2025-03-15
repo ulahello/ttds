@@ -17,6 +17,7 @@ common warnings
     ghc-options: -Wall
 
 executable ttds-web
+    ghc-options: -threaded
     import:           warnings
     main-is:          Main.hs
     other-modules: Auth, Proc
