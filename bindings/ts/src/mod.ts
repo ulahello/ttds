@@ -59,7 +59,7 @@ interface CommonDrawOptions {
 }
 
 interface RectangleDrawOptions extends CommonDrawOptions {
-  type: "rectangle";
+  type: "rect";
   w: number;
   h: number;
   x: number;
