@@ -1,24 +1,12 @@
 # Welcome!
 
-When Zajj saw the posters, she was reportedly quite confused by the fact that we
-were so aggressively advertising a graphics hackathon while also issuing the
-all-caps injunction to "STOP DOING GRAPHICS." This is because all computer
-graphics programs are either 1) beautiful results of mathematical abstraction and truly
-elegant artifacts of human expression, or 2) the most cursed bullshit you've
-seen in your life, and this hackathon fits firmly into number 2. Stop
-doing graphics in general, but, while it's here, you may as well have some fun.
+Without spending too much time on the internals, the 'canvas' that you'll
+hopefully draw on is really three separate but related bits of software.
 
-## Software Structure
-
-Without spending too much time on the internals (though do ask me about them if
-you're curious; they are *deeply* fucked up), the 'canvas' that you'll hopefully
-draw on is really three separate but related bits of software.
-
-1. There's the code that controls the screen. This bears no mention here,
-   but there be dragons.
-2. The code that provides an **HTTP API.** If you're you're familiar with what this
-   is and how it operates, you can skim this document. Otherwise, you may want
-   to keep reading.
+1. There's the code that controls the screen at a low level.
+2. There's the code that provides an **HTTP API.** If you're you're familiar
+   with what this is and how it operates, you can skim this document. Otherwise,
+   you may want to keep reading.
 3. Language-specific **API bindings.** If you're unfamiliar with how HTTP works,
    you'll definitely care about these.
 
@@ -76,5 +64,5 @@ accomplish the same tasks. If you want to use a different language (somebody
 *please* use APL, it would be so funny), you'll need to bind to the [raw
 API](../web/README.md#reference). Otherwise,
 
-1. Python users, look [here](./python.md).
-2. JS or TS users, look [here](./js.md).
+1. Python users, you'll find some example code [here](./../bindings/py/examples/drawing.py).
+2. JS or TS users. (TODO)
